@@ -40,15 +40,115 @@ const riwayatData = [
 ]
 
 const announcements = [
-  { id: 1, title: 'Libur Kemerdekaan 17 Agustus 2026', content: 'Seluruh karyawan diliburkan pada 17-18 Agustus 2026 dalam rangka Hari Kemerdekaan RI ke-81.', date: '10 Agu 2026', category: 'Penting', color: '#ef4444' },
-  { id: 2, title: 'Jadwal Evaluasi Kinerja Q3', content: 'Evaluasi kinerja Q3 akan dilaksanakan 20-24 Agustus 2026. HR akan menghubungi jadwal masing-masing.', date: '08 Agu 2026', category: 'HR', color: '#2563eb' },
-  { id: 3, title: 'Peningkatan Sistem Absensi', content: 'Sistem absensi GPS diperbarui. Pastikan akurasi GPS minimal 50m sebelum check-in.', date: '05 Agu 2026', category: 'IT', color: '#7c3aed' },
+  {
+    id: 1,
+    title: 'Perubahan Jam Kerja Bulan Agustus',
+    category: 'HR & Kebijakan',
+    color: '#ef4444',
+    date: '12 Agustus 2026',
+    publishedAt: '12 Agustus 2026 · 09:30',
+    month: 'Agustus',
+    excerpt: 'Terdapat perubahan jam kerja yang berlaku mulai Senin, 18 Agustus 2026...',
+    body: 'Halo seluruh karyawan,\n\nSehubungan dengan penyesuaian operasional, jam kerja kantor berubah menjadi 08:30–17:30 mulai Senin, 18 Agustus 2026.\n\nHarap menyesuaikan jadwal absensi dan shift masing-masing. Terima kasih atas perhatiannya.',
+    author: 'HR Department',
+    priority: 'penting' as const,
+    pinned: true,
+    requireAck: true,
+    attachments: ['Kebijakan-Jam-Kerja.pdf', 'Jadwal-Agustus.pdf'],
+    read: false,
+    acknowledged: false,
+  },
+  {
+    id: 2,
+    title: 'Informasi Payroll Agustus',
+    category: 'Payroll',
+    color: '#2563eb',
+    date: '10 Agustus 2026',
+    publishedAt: '10 Agustus 2026 · 14:00',
+    month: 'Agustus',
+    excerpt: 'Informasi jadwal payroll bulan Agustus...',
+    body: 'Informasi jadwal payroll bulan Agustus akan diproses pada tanggal 25. Slip gaji tersedia di portal paling lambat tanggal 28.',
+    author: 'HR Department',
+    priority: 'normal' as const,
+    pinned: false,
+    requireAck: false,
+    attachments: [] as string[],
+    read: false,
+    acknowledged: false,
+  },
+  {
+    id: 3,
+    title: 'Jadwal Evaluasi Kinerja Q3',
+    category: 'HR',
+    color: '#2563eb',
+    date: '08 Agustus 2026',
+    publishedAt: '08 Agustus 2026 · 10:00',
+    month: 'Agustus',
+    excerpt: 'Evaluasi kinerja Q3 akan dilaksanakan 20–24 Agustus 2026...',
+    body: 'Evaluasi kinerja Q3 akan dilaksanakan 20–24 Agustus 2026. HR akan menghubungi jadwal masing-masing.',
+    author: 'HR Department',
+    priority: 'penting' as const,
+    pinned: false,
+    requireAck: true,
+    attachments: ['Form-Evaluasi-Q3.pdf'],
+    read: false,
+    acknowledged: false,
+  },
+  {
+    id: 4,
+    title: 'Libur Kemerdekaan 17 Agustus 2026',
+    category: 'Umum',
+    color: '#10b981',
+    date: '05 Agustus 2026',
+    publishedAt: '05 Agustus 2026 · 09:00',
+    month: 'Agustus',
+    excerpt: 'Seluruh karyawan diliburkan pada 17-18 Agustus 2026...',
+    body: 'Seluruh karyawan diliburkan pada 17-18 Agustus 2026 dalam rangka Hari Kemerdekaan RI ke-81.',
+    author: 'HR Department',
+    priority: 'normal' as const,
+    pinned: false,
+    requireAck: false,
+    attachments: [] as string[],
+    read: true,
+    acknowledged: false,
+  },
+  {
+    id: 5,
+    title: 'Peningkatan Sistem Absensi',
+    category: 'IT',
+    color: '#7c3aed',
+    date: '02 Juli 2026',
+    publishedAt: '02 Juli 2026 · 11:00',
+    month: 'Juli',
+    excerpt: 'Sistem absensi GPS diperbarui...',
+    body: 'Sistem absensi GPS diperbarui. Pastikan akurasi GPS minimal 50m sebelum check-in.',
+    author: 'IT Department',
+    priority: 'normal' as const,
+    pinned: false,
+    requireAck: false,
+    attachments: [] as string[],
+    read: true,
+    acknowledged: false,
+  },
 ]
 
 const myRequests = [
-  { id: 1, type: 'Izin Sakit', date: '09 Agu 2026', status: 'disetujui', color: '#10b981' },
-  { id: 2, type: 'WFH', date: '14 Agu 2026', status: 'menunggu', color: '#f59e0b' },
-  { id: 3, type: 'Cuti Tahunan', date: '20–21 Agu 2026', status: 'menunggu', color: '#f59e0b' },
+  { id: 1, no: 'PRM-2026-00120', type: 'Izin Sakit', icon: '🏥', dateLabel: '09 Agustus 2026 · 1 Hari', note: 'Surat dokter terlampir ✓', submitted: 'Diajukan 08 Agu 2026', month: 'AGUSTUS 2026', status: 'disetujui' as const, hasAttachment: true },
+  { id: 2, no: 'PRM-2026-00124', type: 'WFH', icon: '🏠', dateLabel: '14 Agustus 2026 · 1 Hari', note: 'Keperluan pribadi', submitted: 'Diajukan 12 Agu 2026', month: 'AGUSTUS 2026', status: 'menunggu' as const, hasAttachment: false },
+  { id: 3, no: 'PRM-2026-00118', type: 'Cuti Tahunan', icon: '🌴', dateLabel: '20–21 Agu 2026 · 2 Hari', note: 'Acara keluarga', submitted: 'Diajukan 15 Agu 2026', month: 'AGUSTUS 2026', status: 'menunggu' as const, hasAttachment: false },
+  { id: 4, no: 'PRM-2026-00098', type: 'Cuti Tahunan', icon: '🌴', dateLabel: '20–22 Juli 2026 · 3 Hari', note: 'Keperluan pribadi', submitted: 'Diajukan 18 Jul 2026', month: 'JULI 2026', status: 'disetujui' as const, hasAttachment: false },
+  { id: 5, no: 'PRM-2026-00091', type: 'Izin', icon: '📋', dateLabel: '10 Juli 2026 · 1 Hari', note: 'Urusan administrasi', submitted: 'Diajukan 09 Jul 2026', month: 'JULI 2026', status: 'ditolak' as const, hasAttachment: false },
+  { id: 6, no: 'PRM-2026-00085', type: 'Dinas', icon: '🧳', dateLabel: '05–06 Juli 2026 · 2 Hari', note: 'Kunjungan klien Bandung', submitted: 'Diajukan 01 Jul 2026', month: 'JULI 2026', status: 'disetujui' as const, hasAttachment: true },
+]
+
+type EmpRequestType = 'Cuti' | 'Izin Sakit' | 'WFH' | 'Izin' | 'Dinas'
+
+const REQUEST_TYPES: { id: EmpRequestType; icon: string; title: string; desc: string; needsDoc?: boolean }[] = [
+  { id: 'Cuti', icon: '🌴', title: 'Cuti', desc: 'Pengajuan cuti karyawan' },
+  { id: 'Izin Sakit', icon: '🏥', title: 'Izin Sakit', desc: 'Sertakan bukti jika diperlukan', needsDoc: true },
+  { id: 'WFH', icon: '🏠', title: 'WFH', desc: 'Bekerja dari rumah' },
+  { id: 'Izin', icon: '📋', title: 'Izin', desc: 'Tidak masuk kerja' },
+  { id: 'Dinas', icon: '🧳', title: 'Dinas', desc: 'Perjalanan dinas' },
 ]
 
 // ─── Status dot ───────────────────────────────────────────────────────────────
@@ -144,9 +244,11 @@ function HomePage({ user }: { user: AuthUser }) {
         <div className="card" style={{ padding: '20px 22px' }}>
           <div style={{ fontFamily: 'Outfit', fontWeight: 700, fontSize: 15, marginBottom: 16 }}>Pengumuman Terbaru</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {announcements.slice(0, 3).map(a => (
+            {announcements.filter(a => !a.read || a.priority === 'penting').slice(0, 3).map(a => (
               <div key={a.id} style={{ padding: '10px 12px', borderRadius: 10, background: `${a.color}08`, border: `1px solid ${a.color}20` }}>
-                <div style={{ fontFamily: 'Outfit', fontWeight: 600, fontSize: 13, color: 'var(--foreground)', marginBottom: 2 }}>{a.title}</div>
+                <div style={{ fontFamily: 'Outfit', fontWeight: 600, fontSize: 13, color: 'var(--foreground)', marginBottom: 2 }}>
+                  {!a.read && '● '}{a.priority === 'penting' && '🔴 '}{a.title}
+                </div>
                 <div style={{ fontSize: 11, color: 'var(--muted-foreground)' }}>{a.date}</div>
               </div>
             ))}
@@ -242,60 +344,344 @@ function AbsensiEmpPage() {
 
 // ─── Permohonan Page ──────────────────────────────────────────────────────────
 
-function PermohonanEmpPage() {
-  const [showForm, setShowForm] = useState(false)
-  const [formType, setFormType] = useState('Izin Tidak Masuk')
+function PermohonanEmpPage({ user }: { user: AuthUser }) {
+  type Flow = 'list' | 'pick' | 'form' | 'review' | 'detail'
+  const [flow, setFlow] = useState<Flow>('list')
   const [requests, setRequests] = useState(myRequests)
+  const [search, setSearch] = useState('')
+  const [statusFilter, setStatusFilter] = useState<'semua' | 'menunggu' | 'disetujui' | 'ditolak'>('semua')
+  const [typeFilter, setTypeFilter] = useState('Semua Jenis')
+  const [monthFilter, setMonthFilter] = useState('Semua Bulan')
+  const [selectedType, setSelectedType] = useState<EmpRequestType | null>(null)
+  const [detailId, setDetailId] = useState<number | null>(null)
+  const [formDate, setFormDate] = useState('2026-08-12')
+  const [formDuration, setFormDuration] = useState('1')
+  const [formNote, setFormNote] = useState('')
+  const [formFile, setFormFile] = useState<string | null>(null)
+  const [toast, setToast] = useState<string | null>(null)
 
-  const types = ['Izin Tidak Masuk', 'Izin Terlambat', 'Izin Pulang Cepat', 'Cuti Tahunan', 'Izin Sakit', 'WFH', 'Lembur', 'Reimburse']
-
-  const submit = () => {
-    setRequests(r => [{ id: r.length + 1, type: formType, date: 'Hari ini', status: 'menunggu', color: '#f59e0b' }, ...r])
-    setShowForm(false)
+  const counts = {
+    semua: requests.length,
+    menunggu: requests.filter(r => r.status === 'menunggu').length,
+    disetujui: requests.filter(r => r.status === 'disetujui').length,
+    ditolak: requests.filter(r => r.status === 'ditolak').length,
   }
 
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div style={{ fontFamily: 'Outfit', fontWeight: 700, fontSize: 15, color: 'var(--foreground)' }}>Permohonan Saya</div>
-        <button className="btn-primary" onClick={() => setShowForm(s => !s)}>+ Ajukan Permohonan</button>
-      </div>
+  const filtered = requests.filter(r => {
+    const q = search.toLowerCase()
+    const matchSearch = !q || r.type.toLowerCase().includes(q) || r.note.toLowerCase().includes(q) || r.no.toLowerCase().includes(q)
+    const matchStatus = statusFilter === 'semua' || r.status === statusFilter
+    const matchType = typeFilter === 'Semua Jenis'
+      || (typeFilter === 'Cuti' && r.type.includes('Cuti'))
+      || r.type === typeFilter
+    const matchMonth2 = monthFilter === 'Semua Bulan'
+      || (monthFilter.startsWith('Agustus') && r.month.includes('AGUSTUS'))
+      || (monthFilter.startsWith('Juli') && r.month.includes('JULI'))
+    return matchSearch && matchStatus && matchType && matchMonth2
+  })
 
-      {showForm && (
-        <div className="card slide-down" style={{ padding: '20px 22px', border: '1.5px solid var(--primary)' }}>
-          <div style={{ fontFamily: 'Outfit', fontWeight: 700, fontSize: 14, color: 'var(--primary)', marginBottom: 16 }}>Form Permohonan Baru</div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-            <div>
-              <label style={{ fontFamily: 'Outfit', fontWeight: 600, fontSize: 12, color: 'var(--muted-foreground)', display: 'block', marginBottom: 5 }}>Jenis Permohonan</label>
-              <select value={formType} onChange={e => setFormType(e.target.value)} style={{ width: '100%', padding: '9px 12px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--muted)', color: 'var(--foreground)', fontFamily: 'Outfit', fontSize: 13, outline: 'none' }}>
-                {types.map(t => <option key={t}>{t}</option>)}
-              </select>
-            </div>
-            <div>
-              <label style={{ fontFamily: 'Outfit', fontWeight: 600, fontSize: 12, color: 'var(--muted-foreground)', display: 'block', marginBottom: 5 }}>Tanggal</label>
-              <input type="date" style={{ width: '100%', padding: '9px 12px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--muted)', color: 'var(--foreground)', fontFamily: 'Inter', fontSize: 13, outline: 'none', boxSizing: 'border-box' }} />
-            </div>
-          </div>
-          <div style={{ marginTop: 14 }}>
-            <label style={{ fontFamily: 'Outfit', fontWeight: 600, fontSize: 12, color: 'var(--muted-foreground)', display: 'block', marginBottom: 5 }}>Keterangan</label>
-            <textarea rows={3} placeholder="Tulis alasan permohonan..." style={{ width: '100%', padding: '9px 12px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--muted)', color: 'var(--foreground)', fontFamily: 'Inter', fontSize: 13, outline: 'none', resize: 'none', boxSizing: 'border-box' }} />
-          </div>
-          <div style={{ display: 'flex', gap: 10, marginTop: 14 }}>
-            <button className="btn-primary" onClick={submit}>Kirim Permohonan</button>
-            <button className="btn-ghost" onClick={() => setShowForm(false)}>Batal</button>
+  const grouped = filtered.reduce<Record<string, typeof filtered>>((acc, r) => {
+    ;(acc[r.month] ??= []).push(r)
+    return acc
+  }, {})
+
+  const typeMeta = REQUEST_TYPES.find(t => t.id === selectedType)
+  const needsDoc = typeMeta?.needsDoc
+
+  const openPick = () => { setFlow('pick'); setSelectedType(null); setFormNote(''); setFormFile(null); setFormDuration('1') }
+  const pickType = (t: EmpRequestType) => { setSelectedType(t); setFlow('form') }
+  const goReview = () => {
+    if (!formNote.trim()) { setToast('Isi keterangan terlebih dahulu.'); setTimeout(() => setToast(null), 2000); return }
+    if (needsDoc && !formFile) { setToast('Upload dokumen pendukung wajib untuk jenis ini.'); setTimeout(() => setToast(null), 2200); return }
+    setFlow('review')
+  }
+  const submit = (asDraft = false) => {
+    if (!selectedType || !typeMeta) return
+    const no = `PRM-2026-${String(130 + requests.length).padStart(5, '0')}`
+    setRequests(r => [{
+      id: Date.now(),
+      no,
+      type: selectedType === 'Cuti' ? 'Cuti Tahunan' : selectedType,
+      icon: typeMeta.icon,
+      dateLabel: `${new Date(formDate + 'T00:00:00').toLocaleDateString('id', { day: '2-digit', month: 'long', year: 'numeric' })} · ${formDuration} Hari`,
+      note: formNote || (asDraft ? 'Draft' : '—'),
+      submitted: asDraft ? 'Disimpan sebagai draft' : 'Diajukan hari ini',
+      month: 'AGUSTUS 2026',
+      status: 'menunggu' as const,
+      hasAttachment: !!formFile,
+    }, ...r])
+    setFlow('list')
+    setToast(asDraft ? 'Draft tersimpan.' : 'Permohonan berhasil dikirim.')
+    setTimeout(() => setToast(null), 2200)
+  }
+
+  const selectStyle: CSSProperties = {
+    padding: '10px 14px', borderRadius: 12, border: '1px solid var(--border)',
+    background: 'var(--card)', color: 'var(--foreground)', fontFamily: 'Outfit',
+    fontSize: 13, fontWeight: 600, cursor: 'pointer', outline: 'none',
+  }
+
+  const detail = requests.find(r => r.id === detailId)
+
+  return (
+    <div className="card" style={{ overflow: 'hidden', position: 'relative' }}>
+      {toast && (
+        <div className="toast" style={{ bottom: 24, right: 24 }}>{toast}</div>
+      )}
+
+      {/* ── Type pick / Form / Review modal ── */}
+      {(flow === 'pick' || flow === 'form' || flow === 'review') && (
+        <div onClick={() => setFlow('list')} style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+          <div onClick={e => e.stopPropagation()} className="card" style={{ width: '100%', maxWidth: flow === 'review' ? 560 : 520, maxHeight: '92vh', overflow: 'auto', boxShadow: '0 24px 60px rgba(0,0,0,0.25)' }}>
+            {flow === 'pick' && (
+              <>
+                <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <div>
+                    <div style={{ fontFamily: 'Outfit', fontWeight: 800, fontSize: 17 }}>Ajukan Permohonan</div>
+                    <div style={{ fontSize: 13, color: 'var(--muted-foreground)', marginTop: 4 }}>Pilih jenis permohonan yang ingin Anda ajukan</div>
+                  </div>
+                  <button onClick={() => setFlow('list')} style={{ width: 30, height: 30, borderRadius: 8, border: '1px solid var(--border)', background: 'var(--muted)', cursor: 'pointer' }}>✕</button>
+                </div>
+                <div style={{ padding: 20, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                  {REQUEST_TYPES.map(t => (
+                    <button key={t.id} onClick={() => pickType(t.id)} className="card" style={{ padding: '16px 14px', textAlign: 'left', cursor: 'pointer', border: '1px solid var(--border)', background: 'var(--card)' }}>
+                      <div style={{ fontSize: 26, marginBottom: 8 }}>{t.icon}</div>
+                      <div style={{ fontFamily: 'Outfit', fontWeight: 700, fontSize: 14 }}>{t.title}</div>
+                      <div style={{ fontSize: 12, color: 'var(--muted-foreground)', marginTop: 4, lineHeight: 1.4 }}>{t.desc}</div>
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {flow === 'form' && selectedType && typeMeta && (
+              <>
+                <div style={{ padding: '18px 24px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <button onClick={() => setFlow('pick')} className="btn-ghost" style={{ padding: '6px 10px', fontSize: 13 }}>←</button>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontFamily: 'Outfit', fontWeight: 800, fontSize: 16 }}>{typeMeta.icon} {typeMeta.title}</div>
+                    <div style={{ fontSize: 12, color: 'var(--muted-foreground)', marginTop: 2 }}>Langkah 1 dari 2 · Detail Permohonan</div>
+                  </div>
+                  <button onClick={() => setFlow('list')} style={{ width: 30, height: 30, borderRadius: 8, border: '1px solid var(--border)', background: 'var(--muted)', cursor: 'pointer' }}>✕</button>
+                </div>
+                <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+                  <div>
+                    <label style={{ fontFamily: 'Outfit', fontWeight: 600, fontSize: 12, color: 'var(--muted-foreground)', display: 'block', marginBottom: 6 }}>
+                      {selectedType === 'Izin Sakit' ? 'Tanggal Sakit' : selectedType === 'Dinas' ? 'Tanggal Dinas' : 'Tanggal'}
+                    </label>
+                    <input type="date" value={formDate} onChange={e => setFormDate(e.target.value)} style={{ width: '100%', padding: '11px 14px', borderRadius: 12, border: '1px solid var(--border)', background: 'var(--muted)', color: 'var(--foreground)', fontFamily: 'Inter', fontSize: 14, outline: 'none', boxSizing: 'border-box' }} />
+                  </div>
+                  <div>
+                    <label style={{ fontFamily: 'Outfit', fontWeight: 600, fontSize: 12, color: 'var(--muted-foreground)', display: 'block', marginBottom: 6 }}>Durasi (hari)</label>
+                    <input type="number" min={1} max={30} value={formDuration} onChange={e => setFormDuration(e.target.value)} style={{ width: '100%', padding: '11px 14px', borderRadius: 12, border: '1px solid var(--border)', background: 'var(--muted)', color: 'var(--foreground)', fontFamily: 'Inter', fontSize: 14, outline: 'none', boxSizing: 'border-box' }} />
+                  </div>
+                  {(selectedType === 'Cuti' || selectedType === 'WFH') && (
+                    <div>
+                      <label style={{ fontFamily: 'Outfit', fontWeight: 600, fontSize: 12, color: 'var(--muted-foreground)', display: 'block', marginBottom: 6 }}>Sisa kuota</label>
+                      <div style={{ padding: '10px 14px', borderRadius: 12, background: 'rgba(37,99,235,0.08)', border: '1px solid rgba(37,99,235,0.2)', fontFamily: 'Outfit', fontWeight: 600, fontSize: 13, color: 'var(--primary)' }}>
+                        {selectedType === 'Cuti' ? '12 hari cuti tersisa' : 'WFH tersedia bulan ini'}
+                      </div>
+                    </div>
+                  )}
+                  {selectedType === 'Dinas' && (
+                    <div>
+                      <label style={{ fontFamily: 'Outfit', fontWeight: 600, fontSize: 12, color: 'var(--muted-foreground)', display: 'block', marginBottom: 6 }}>Lokasi dinas</label>
+                      <input placeholder="cth: Bandung / Surabaya" style={{ width: '100%', padding: '11px 14px', borderRadius: 12, border: '1px solid var(--border)', background: 'var(--muted)', color: 'var(--foreground)', fontFamily: 'Inter', fontSize: 14, outline: 'none', boxSizing: 'border-box' }} />
+                    </div>
+                  )}
+                  <div>
+                    <label style={{ fontFamily: 'Outfit', fontWeight: 600, fontSize: 12, color: 'var(--muted-foreground)', display: 'block', marginBottom: 6 }}>Keterangan</label>
+                    <textarea rows={4} value={formNote} onChange={e => setFormNote(e.target.value)} placeholder="Jelaskan alasan permohonan..." style={{ width: '100%', padding: '11px 14px', borderRadius: 12, border: '1px solid var(--border)', background: 'var(--muted)', color: 'var(--foreground)', fontFamily: 'Inter', fontSize: 14, outline: 'none', resize: 'none', boxSizing: 'border-box' }} />
+                  </div>
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                      <label style={{ fontFamily: 'Outfit', fontWeight: 600, fontSize: 12, color: 'var(--muted-foreground)' }}>Dokumen Pendukung</label>
+                      {needsDoc && <span style={{ fontSize: 11, color: '#dc2626', fontFamily: 'Outfit', fontWeight: 600 }}>* Wajib</span>}
+                    </div>
+                    <label style={{ display: 'block', padding: '28px 16px', borderRadius: 12, border: '1.5px dashed var(--border)', background: 'var(--muted)', textAlign: 'center', cursor: 'pointer' }}>
+                      <input type="file" accept=".jpg,.jpeg,.png,.pdf" style={{ display: 'none' }} onChange={e => setFormFile(e.target.files?.[0]?.name ?? 'Surat_Dokter.pdf')} />
+                      <div style={{ fontSize: 22, marginBottom: 6 }}>📎</div>
+                      <div style={{ fontFamily: 'Outfit', fontWeight: 600, fontSize: 13 }}>
+                        {formFile ? formFile : 'Upload surat dokter / bukti'}
+                      </div>
+                      <div style={{ fontSize: 11, color: 'var(--muted-foreground)', marginTop: 4 }}>JPG, PNG, PDF · Maks. 5 MB</div>
+                    </label>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 4 }}>
+                    <button className="btn-ghost" onClick={() => setFlow('list')}>Batal</button>
+                    <button className="btn-primary" onClick={goReview}>Lanjutkan →</button>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {flow === 'review' && selectedType && typeMeta && (
+              <>
+                <div style={{ padding: '18px 24px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <button onClick={() => setFlow('form')} className="btn-ghost" style={{ padding: '6px 10px', fontSize: 13 }}>←</button>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontFamily: 'Outfit', fontWeight: 800, fontSize: 16 }}>Review Permohonan</div>
+                    <div style={{ fontSize: 12, color: 'var(--muted-foreground)', marginTop: 2 }}>Langkah 2 dari 2 · Pastikan data sudah benar</div>
+                  </div>
+                  <button onClick={() => setFlow('list')} style={{ width: 30, height: 30, borderRadius: 8, border: '1px solid var(--border)', background: 'var(--muted)', cursor: 'pointer' }}>✕</button>
+                </div>
+                <div style={{ padding: '20px 24px' }}>
+                  <div style={{ border: '1px solid var(--border)', borderRadius: 14, padding: '22px 20px', background: 'var(--muted)' }}>
+                    <div style={{ textAlign: 'center', marginBottom: 18 }}>
+                      <div style={{ width: 44, height: 44, borderRadius: 12, background: 'linear-gradient(135deg,#2563eb,#7c3aed)', color: '#fff', fontFamily: 'Outfit', fontWeight: 900, fontSize: 18, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: 10 }}>H</div>
+                      <div style={{ fontFamily: 'Outfit', fontWeight: 800, fontSize: 15, letterSpacing: '0.04em' }}>PERMOHONAN {selectedType.toUpperCase()}</div>
+                      <div className="mono" style={{ fontSize: 11, color: 'var(--muted-foreground)', marginTop: 4 }}>No. PRM-2026-00128</div>
+                    </div>
+                    <div style={{ height: 1, background: 'var(--border)', marginBottom: 16 }} />
+                    <div style={{ fontSize: 10, fontFamily: 'JetBrains Mono', color: 'var(--muted-foreground)', letterSpacing: '0.08em', marginBottom: 8 }}>DATA KARYAWAN</div>
+                    {[
+                      ['Nama', user.name],
+                      ['NIK', 'EMP00123'],
+                      ['Departemen', 'Engineering'],
+                      ['Jabatan', 'Software Engineer'],
+                    ].map(([k, v]) => (
+                      <div key={k} style={{ display: 'flex', gap: 12, fontSize: 13, marginBottom: 6 }}>
+                        <span style={{ width: 100, color: 'var(--muted-foreground)', fontFamily: 'Outfit' }}>{k}</span>
+                        <span style={{ fontFamily: 'Outfit', fontWeight: 600 }}>{v}</span>
+                      </div>
+                    ))}
+                    <div style={{ height: 1, background: 'var(--border)', margin: '14px 0' }} />
+                    <div style={{ fontSize: 10, fontFamily: 'JetBrains Mono', color: 'var(--muted-foreground)', letterSpacing: '0.08em', marginBottom: 8 }}>DETAIL PERMOHONAN</div>
+                    {[
+                      ['Tanggal', new Date(formDate + 'T00:00:00').toLocaleDateString('id', { day: 'numeric', month: 'long', year: 'numeric' })],
+                      ['Durasi', `${formDuration} Hari`],
+                    ].map(([k, v]) => (
+                      <div key={k} style={{ display: 'flex', gap: 12, fontSize: 13, marginBottom: 6 }}>
+                        <span style={{ width: 100, color: 'var(--muted-foreground)', fontFamily: 'Outfit' }}>{k}</span>
+                        <span style={{ fontFamily: 'Outfit', fontWeight: 600 }}>{v}</span>
+                      </div>
+                    ))}
+                    <div style={{ marginTop: 10 }}>
+                      <div style={{ fontSize: 12, color: 'var(--muted-foreground)', fontFamily: 'Outfit', marginBottom: 4 }}>Keterangan</div>
+                      <div style={{ fontSize: 13, lineHeight: 1.55, fontFamily: 'Inter' }}>{formNote}</div>
+                    </div>
+                    {formFile && (
+                      <>
+                        <div style={{ height: 1, background: 'var(--border)', margin: '14px 0' }} />
+                        <div style={{ fontSize: 10, fontFamily: 'JetBrains Mono', color: 'var(--muted-foreground)', letterSpacing: '0.08em', marginBottom: 8 }}>DOKUMEN PENDUKUNG</div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13 }}>
+                          <span>📎 {formFile}</span>
+                          <span style={{ marginLeft: 'auto', fontSize: 11, color: '#059669', fontFamily: 'Outfit', fontWeight: 600 }}>✓ Terlampir</span>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                  <div style={{ display: 'flex', gap: 10, marginTop: 18, flexWrap: 'wrap' }}>
+                    <button className="btn-ghost" onClick={() => setFlow('form')}>← Edit</button>
+                    <div style={{ flex: 1 }} />
+                    <button className="btn-ghost" onClick={() => submit(true)}>Simpan Draft</button>
+                    <button className="btn-primary" onClick={() => submit(false)}>✓ Kirim Pengajuan</button>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {requests.map(req => (
-          <div key={req.id} className="card" style={{ padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 14 }}>
-            <div style={{ width: 40, height: 40, borderRadius: 10, background: `${req.color}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>📋</div>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontFamily: 'Outfit', fontWeight: 700, fontSize: 14, color: 'var(--foreground)' }}>{req.type}</div>
-              <div style={{ fontSize: 12, color: 'var(--muted-foreground)', marginTop: 2 }}>{req.date}</div>
+      {/* Detail modal */}
+      {flow === 'detail' && detail && (
+        <div onClick={() => { setFlow('list'); setDetailId(null) }} style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+          <div onClick={e => e.stopPropagation()} className="card" style={{ width: '100%', maxWidth: 440, padding: '22px 24px', boxShadow: '0 24px 60px rgba(0,0,0,0.25)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
+              <div>
+                <div style={{ fontFamily: 'Outfit', fontWeight: 800, fontSize: 16 }}>{detail.icon} {detail.type}</div>
+                <div className="mono" style={{ fontSize: 11, color: 'var(--muted-foreground)', marginTop: 4 }}>{detail.no}</div>
+              </div>
+              <button onClick={() => { setFlow('list'); setDetailId(null) }} style={{ width: 30, height: 30, borderRadius: 8, border: '1px solid var(--border)', background: 'var(--muted)', cursor: 'pointer' }}>✕</button>
             </div>
-            <StatusBadge status={req.status} />
+            <StatusBadge status={detail.status} />
+            <div style={{ marginTop: 14, fontSize: 13, color: 'var(--muted-foreground)' }}>{detail.dateLabel}</div>
+            <div style={{ marginTop: 8, fontSize: 14, fontFamily: 'Outfit' }}>{detail.note}</div>
+            <div style={{ marginTop: 12, fontSize: 12, color: 'var(--muted-foreground)' }}>{detail.submitted}</div>
+          </div>
+        </div>
+      )}
+
+      {/* Header */}
+      <div style={{ padding: '22px 24px 18px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
+        <div>
+          <div style={{ fontFamily: 'Outfit', fontWeight: 800, fontSize: 18 }}>Permohonan Saya</div>
+          <div style={{ fontSize: 13, color: 'var(--muted-foreground)', marginTop: 4 }}>Kelola pengajuan cuti, izin, dan permohonan lainnya</div>
+        </div>
+        <button className="btn-primary" onClick={openPick}>+ Ajukan Permohonan</button>
+      </div>
+
+      {/* Summary */}
+      <div style={{ padding: '18px 24px', borderBottom: '1px solid var(--border)', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 12 }}>
+        {([
+          { key: 'semua' as const, label: 'Semua', value: counts.semua, color: '#2563eb' },
+          { key: 'menunggu' as const, label: 'Menunggu', value: counts.menunggu, color: '#f59e0b' },
+          { key: 'disetujui' as const, label: 'Disetujui', value: counts.disetujui, color: '#10b981' },
+          { key: 'ditolak' as const, label: 'Ditolak', value: counts.ditolak, color: '#ef4444' },
+        ]).map(s => (
+          <button key={s.key} onClick={() => setStatusFilter(s.key)} style={{
+            textAlign: 'left', padding: '14px 16px', borderRadius: 12, cursor: 'pointer',
+            background: statusFilter === s.key ? `${s.color}12` : 'var(--muted)',
+            border: `1.5px solid ${statusFilter === s.key ? s.color : 'transparent'}`,
+          }}>
+            <div style={{ fontSize: 12, color: 'var(--muted-foreground)', fontFamily: 'Outfit', fontWeight: 500 }}>{s.label}</div>
+            <div style={{ fontSize: 26, fontFamily: 'Outfit', fontWeight: 800, color: s.color, marginTop: 4 }}>{s.value}</div>
+            <div style={{ fontSize: 11, color: 'var(--muted-foreground)', marginTop: 2 }}>permohonan</div>
+          </button>
+        ))}
+      </div>
+
+      {/* Filters */}
+      <div style={{ padding: '16px 24px', borderBottom: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+          <div style={{ background: 'var(--muted)', borderRadius: 12, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 180 }}>
+            <span>🔍</span>
+            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Cari permohonan..." style={{ background: 'none', border: 'none', outline: 'none', fontSize: 13, color: 'var(--foreground)', width: '100%', fontFamily: 'Inter' }} />
+          </div>
+          <select value={statusFilter} onChange={e => setStatusFilter(e.target.value as typeof statusFilter)} style={selectStyle}>
+            <option value="semua">Semua Status</option>
+            <option value="menunggu">Menunggu</option>
+            <option value="disetujui">Disetujui</option>
+            <option value="ditolak">Ditolak</option>
+          </select>
+          <select value={typeFilter} onChange={e => setTypeFilter(e.target.value)} style={selectStyle}>
+            {['Semua Jenis', 'Cuti', 'Izin Sakit', 'WFH', 'Izin', 'Dinas'].map(t => <option key={t}>{t}</option>)}
+          </select>
+          <select value={monthFilter} onChange={e => setMonthFilter(e.target.value)} style={selectStyle}>
+            {['Semua Bulan', 'Agustus 2026', 'Juli 2026'].map(t => <option key={t}>{t}</option>)}
+          </select>
+        </div>
+      </div>
+
+      {/* History */}
+      <div style={{ padding: '18px 24px 24px' }}>
+        <div style={{ fontFamily: 'Outfit', fontWeight: 700, fontSize: 14, marginBottom: 16 }}>Riwayat Permohonan</div>
+        {Object.keys(grouped).length === 0 && (
+          <div style={{ padding: 36, textAlign: 'center', color: 'var(--muted-foreground)', fontFamily: 'Outfit' }}>Tidak ada permohonan.</div>
+        )}
+        {Object.entries(grouped).map(([month, items]) => (
+          <div key={month} style={{ marginBottom: 20 }}>
+            <div style={{ fontSize: 11, fontFamily: 'JetBrains Mono', color: 'var(--muted-foreground)', letterSpacing: '0.08em', fontWeight: 600, marginBottom: 10 }}>{month}</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {items.map(req => (
+                <div key={req.id} className="card" style={{ padding: '16px 18px', cursor: 'pointer' }} onClick={() => { setDetailId(req.id); setFlow('detail') }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, marginBottom: 10 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <span style={{ fontSize: 22 }}>{req.icon}</span>
+                      <span style={{ fontFamily: 'Outfit', fontWeight: 700, fontSize: 15 }}>{req.type}</span>
+                    </div>
+                    <StatusBadge status={req.status} />
+                  </div>
+                  <div style={{ fontSize: 13, color: 'var(--muted-foreground)', marginBottom: 4 }}>{req.dateLabel}</div>
+                  <div style={{ fontSize: 13, color: 'var(--foreground)', marginBottom: 12 }}>{req.note}</div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 10, borderTop: '1px solid var(--border)' }}>
+                    <span style={{ fontSize: 12, color: 'var(--muted-foreground)' }}>{req.submitted}</span>
+                    <span style={{ fontSize: 12, color: 'var(--primary)', fontFamily: 'Outfit', fontWeight: 600 }}>Lihat Detail →</span>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         ))}
       </div>
@@ -502,23 +888,190 @@ function RiwayatEmpPage() {
 // ─── Pengumuman Page ──────────────────────────────────────────────────────────
 
 function PengumumanEmpPage() {
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-      {announcements.map(a => (
-        <div key={a.id} className="card" style={{ padding: '20px 22px' }}>
-          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
-            <div style={{ width: 44, height: 44, borderRadius: 12, background: `${a.color}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0 }}>📢</div>
-            <div style={{ flex: 1 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6, flexWrap: 'wrap' }}>
-                <span style={{ fontFamily: 'Outfit', fontWeight: 700, fontSize: 15, color: 'var(--foreground)' }}>{a.title}</span>
-                <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 6, background: `${a.color}15`, color: a.color, border: `1px solid ${a.color}25`, fontFamily: 'JetBrains Mono' }}>{a.category}</span>
-              </div>
-              <div style={{ fontSize: 13, color: 'var(--muted-foreground)', lineHeight: 1.6 }}>{a.content}</div>
-              <div style={{ marginTop: 10, fontSize: 11, color: 'var(--muted-foreground)', fontFamily: 'JetBrains Mono' }}>{a.date}</div>
-            </div>
-          </div>
+  type FilterKey = 'unread' | 'penting' | 'semua'
+  const [items, setItems] = useState(announcements)
+  const [filter, setFilter] = useState<FilterKey>('semua')
+  const [search, setSearch] = useState('')
+  const [category, setCategory] = useState('Semua Kategori')
+  const [month, setMonth] = useState('Semua Bulan')
+  const [detailId, setDetailId] = useState<number | null>(null)
+
+  const counts = {
+    unread: items.filter(a => !a.read).length,
+    penting: items.filter(a => a.priority === 'penting').length,
+    semua: items.length,
+  }
+
+  const filtered = items.filter(a => {
+    const q = search.toLowerCase()
+    const matchSearch = !q || a.title.toLowerCase().includes(q) || a.excerpt.toLowerCase().includes(q)
+    const matchFilter =
+      filter === 'semua' ||
+      (filter === 'unread' && !a.read) ||
+      (filter === 'penting' && a.priority === 'penting')
+    const matchCat = category === 'Semua Kategori' || a.category.includes(category) || a.category === category
+    const matchMonth = month === 'Semua Bulan' || a.month === month.replace(' 2026', '')
+    return matchSearch && matchFilter && matchCat && matchMonth
+  }).sort((a, b) => {
+    if (a.pinned !== b.pinned) return a.pinned ? -1 : 1
+    if (a.priority !== b.priority) return a.priority === 'penting' ? -1 : 1
+    return 0
+  })
+
+  const detail = items.find(a => a.id === detailId)
+
+  const markRead = (id: number) => {
+    setItems(list => list.map(a => a.id === id ? { ...a, read: true } : a))
+  }
+
+  const openDetail = (id: number) => {
+    markRead(id)
+    setDetailId(id)
+  }
+
+  const acknowledge = (id: number) => {
+    setItems(list => list.map(a => a.id === id ? { ...a, acknowledged: true, read: true } : a))
+  }
+
+  const selectStyle: CSSProperties = {
+    padding: '10px 14px', borderRadius: 12, border: '1px solid var(--border)',
+    background: 'var(--card)', color: 'var(--foreground)', fontFamily: 'Outfit',
+    fontSize: 13, fontWeight: 600, cursor: 'pointer', outline: 'none',
+  }
+
+  if (detail) {
+    return (
+      <div className="card" style={{ overflow: 'hidden' }}>
+        <div style={{ padding: '16px 24px', borderBottom: '1px solid var(--border)' }}>
+          <button className="btn-ghost" style={{ fontSize: 13, marginBottom: 12 }} onClick={() => setDetailId(null)}>← Kembali ke Pengumuman</button>
+          {detail.priority === 'penting' && (
+            <div style={{ fontSize: 12, fontFamily: 'Outfit', fontWeight: 800, color: '#dc2626', marginBottom: 8 }}>🔴 PENTING</div>
+          )}
+          {detail.pinned && <div style={{ fontSize: 12, color: 'var(--primary)', fontFamily: 'Outfit', fontWeight: 600, marginBottom: 6 }}>📌 Dipin</div>}
+          <div style={{ fontFamily: 'Outfit', fontWeight: 800, fontSize: 22, marginBottom: 8 }}>{detail.title}</div>
+          <div style={{ fontSize: 13, color: 'var(--muted-foreground)' }}>{detail.category}</div>
+          <div style={{ fontSize: 12, color: 'var(--muted-foreground)', marginTop: 4 }}>Dipublikasikan {detail.publishedAt}</div>
         </div>
-      ))}
+        <div style={{ padding: '22px 24px', display: 'flex', flexDirection: 'column', gap: 20 }}>
+          <div style={{ fontSize: 14, lineHeight: 1.75, whiteSpace: 'pre-wrap' }}>{detail.body}</div>
+
+          {detail.attachments.length > 0 && (
+            <div>
+              <div style={{ height: 1, background: 'var(--border)', marginBottom: 14 }} />
+              <div style={{ fontFamily: 'Outfit', fontWeight: 700, fontSize: 13, marginBottom: 10 }}>Lampiran</div>
+              {detail.attachments.map(f => (
+                <div key={f} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 10, background: 'var(--muted)', marginBottom: 8 }}>
+                  <span>📄</span>
+                  <span style={{ fontSize: 13, fontFamily: 'Outfit', fontWeight: 600 }}>{f}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div style={{ height: 1, background: 'var(--border)' }} />
+          <div>
+            <div style={{ fontSize: 12, color: 'var(--muted-foreground)', marginBottom: 4 }}>Diterbitkan oleh</div>
+            <div style={{ fontFamily: 'Outfit', fontWeight: 700, fontSize: 14 }}>{detail.author}</div>
+          </div>
+
+          <div style={{ padding: '12px 14px', borderRadius: 10, background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.2)', color: '#059669', fontFamily: 'Outfit', fontWeight: 600, fontSize: 13 }}>
+            ✓ Anda telah membaca pengumuman ini
+          </div>
+
+          {detail.requireAck && !detail.acknowledged && (
+            <div style={{ padding: '16px 18px', borderRadius: 12, background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.25)' }}>
+              <div style={{ fontFamily: 'Outfit', fontWeight: 700, fontSize: 14, color: '#d97706', marginBottom: 8 }}>⚠️ Pengumuman ini membutuhkan konfirmasi</div>
+              <div style={{ fontSize: 13, color: 'var(--muted-foreground)', marginBottom: 14, lineHeight: 1.5 }}>
+                Saya telah membaca dan memahami informasi dalam pengumuman ini.
+              </div>
+              <button className="btn-primary" onClick={() => acknowledge(detail.id)}>✓ Saya Mengerti</button>
+            </div>
+          )}
+          {detail.requireAck && detail.acknowledged && (
+            <div style={{ padding: '12px 14px', borderRadius: 10, background: 'rgba(37,99,235,0.08)', border: '1px solid rgba(37,99,235,0.2)', color: 'var(--primary)', fontFamily: 'Outfit', fontWeight: 600, fontSize: 13 }}>
+              ✓ Anda sudah mengonfirmasi pengumuman ini
+            </div>
+          )}
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="card" style={{ overflow: 'hidden' }}>
+      <div style={{ padding: '22px 24px 18px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
+        <div>
+          <div style={{ fontFamily: 'Outfit', fontWeight: 800, fontSize: 18 }}>Pengumuman</div>
+          <div style={{ fontSize: 13, color: 'var(--muted-foreground)', marginTop: 4 }}>Informasi terbaru dari perusahaan</div>
+        </div>
+        <button onClick={() => setFilter('semua')} style={{ background: 'none', border: 'none', color: 'var(--primary)', fontFamily: 'Outfit', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>
+          Semua Pengumuman →
+        </button>
+      </div>
+
+      <div style={{ padding: '18px 24px', borderBottom: '1px solid var(--border)', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 12 }}>
+        {([
+          { key: 'unread' as FilterKey, label: 'Belum Dibaca', value: counts.unread, color: '#f59e0b' },
+          { key: 'penting' as FilterKey, label: 'Penting', value: counts.penting, color: '#ef4444' },
+          { key: 'semua' as FilterKey, label: 'Semua', value: counts.semua, color: '#2563eb' },
+        ]).map(s => (
+          <button key={s.key} onClick={() => setFilter(s.key)} style={{
+            textAlign: 'left', padding: '14px 16px', borderRadius: 12, cursor: 'pointer',
+            background: filter === s.key ? `${s.color}12` : 'var(--muted)',
+            border: `1.5px solid ${filter === s.key ? s.color : 'transparent'}`,
+          }}>
+            <div style={{ fontSize: 12, color: 'var(--muted-foreground)', fontFamily: 'Outfit' }}>{s.label}</div>
+            <div style={{ fontSize: 26, fontFamily: 'Outfit', fontWeight: 800, color: s.color, marginTop: 4 }}>{s.value}</div>
+          </button>
+        ))}
+      </div>
+
+      <div style={{ padding: '16px 24px', borderBottom: '1px solid var(--border)', display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+        <div style={{ background: 'var(--muted)', borderRadius: 12, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 180 }}>
+          <span>🔍</span>
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Cari pengumuman..." style={{ background: 'none', border: 'none', outline: 'none', fontSize: 13, color: 'var(--foreground)', width: '100%', fontFamily: 'Inter' }} />
+        </div>
+        <select value={category} onChange={e => setCategory(e.target.value)} style={selectStyle}>
+          {['Semua Kategori', 'Kebijakan', 'Payroll', 'HR', 'IT', 'Umum'].map(c => <option key={c}>{c}</option>)}
+        </select>
+        <select value={month} onChange={e => setMonth(e.target.value)} style={selectStyle}>
+          {['Semua Bulan', 'Agustus 2026', 'Juli 2026'].map(c => <option key={c}>{c}</option>)}
+        </select>
+      </div>
+
+      <div style={{ padding: '18px 24px 24px' }}>
+        <div style={{ fontFamily: 'Outfit', fontWeight: 700, fontSize: 14, marginBottom: 14 }}>Pengumuman Terbaru</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {filtered.map(a => (
+            <div key={a.id} className="card" style={{ padding: '16px 18px', cursor: 'pointer', border: !a.read ? '1.5px solid rgba(245,158,11,0.35)' : '1px solid var(--border)' }} onClick={() => openDetail(a.id)}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10, marginBottom: 8, flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  {a.pinned && <span style={{ fontSize: 11, fontFamily: 'Outfit', fontWeight: 700, color: 'var(--primary)' }}>📌 PIN</span>}
+                  {a.priority === 'penting' && <span style={{ fontSize: 11, fontFamily: 'Outfit', fontWeight: 800, color: '#dc2626' }}>🔴 PENTING</span>}
+                  {!a.pinned && a.priority === 'normal' && <span style={{ fontSize: 16 }}>📢</span>}
+                </div>
+                {!a.read ? (
+                  <span className="mono" style={{ fontSize: 10, padding: '3px 10px', borderRadius: 99, background: 'rgba(245,158,11,0.12)', color: '#d97706', fontWeight: 600 }}>● BELUM DIBACA</span>
+                ) : a.requireAck && !a.acknowledged ? (
+                  <span className="mono" style={{ fontSize: 10, padding: '3px 10px', borderRadius: 99, background: 'rgba(239,68,68,0.1)', color: '#dc2626', fontWeight: 600 }}>Perlu konfirmasi</span>
+                ) : null}
+              </div>
+              <div style={{ fontFamily: 'Outfit', fontWeight: 700, fontSize: 15, marginBottom: 4 }}>{a.title}</div>
+              <div style={{ fontSize: 12, color: 'var(--muted-foreground)', marginBottom: 10 }}>{a.category} · {a.date}</div>
+              <div style={{ fontSize: 13, color: 'var(--muted-foreground)', lineHeight: 1.5, marginBottom: 12 }}>{a.excerpt}</div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 10, borderTop: '1px solid var(--border)' }}>
+                <span style={{ fontSize: 12, color: 'var(--muted-foreground)' }}>
+                  {a.attachments.length > 0 ? `📎 ${a.attachments.length} Lampiran` : ' '}
+                </span>
+                <span style={{ fontSize: 12, color: 'var(--primary)', fontFamily: 'Outfit', fontWeight: 600 }}>Baca →</span>
+              </div>
+            </div>
+          ))}
+          {filtered.length === 0 && (
+            <div style={{ padding: 36, textAlign: 'center', color: 'var(--muted-foreground)', fontFamily: 'Outfit' }}>Tidak ada pengumuman.</div>
+          )}
+        </div>
+      </div>
     </div>
   )
 }
@@ -631,7 +1184,7 @@ export default function EmployeePortal({ user, onLogout, dark, onToggleDark }: {
         <main style={{ padding: '28px 24px', flex: 1, minWidth: 0 }}>
           {nav === 'home' && <HomePage user={user} />}
           {nav === 'absensi' && <AbsensiEmpPage />}
-          {nav === 'permohonan' && <PermohonanEmpPage />}
+          {nav === 'permohonan' && <PermohonanEmpPage user={user} />}
           {nav === 'riwayat' && <RiwayatEmpPage />}
           {nav === 'pengumuman' && <PengumumanEmpPage />}
           {nav === 'profil' && <ProfilPage user={user} />}

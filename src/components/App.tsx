@@ -10,6 +10,7 @@ import KaryawanPage from './pages/KaryawanPage'
 import LaporanPage from './pages/LaporanPage'
 import PengaturanPage from './pages/PengaturanPage'
 import PermohonanPage from './pages/PermohonanPage'
+import PengumumanPage from './pages/PengumumanPage'
 import LoginPage, { type AuthUser } from './pages/LoginPage'
 import EmployeePortal from './pages/EmployeePortal'
 import ControlCenter from './pages/ControlCenter'
@@ -596,7 +597,7 @@ function HRPortal({ user, onLogout, dark, onToggleDark }: { user: AuthUser; onLo
     if (activeRoot === 'permohonan') return <PermohonanPage />
     if (activeRoot === 'karyawan') return <KaryawanPage />
     if (activeNav === 'laporan') return <LaporanPage />
-    if (activeNav === 'pengumuman') return <PlaceholderPage icon="📢" title="Pengumuman" desc="Buat dan kelola pengumuman perusahaan — draft, publish, arsip." />
+    if (activeNav === 'pengumuman') return <PengumumanPage />
     if (activeNav === 'chat') return <PlaceholderPage icon="💬" title="Chat Internal" desc="Ruang chat perusahaan untuk seluruh karyawan." />
     if (activeNav === 'notifikasi') return <PlaceholderPage icon="🔔" title="Notifikasi" desc="Inbox notifikasi sistem HR." />
     if (activeRoot === 'pengaturan') return <PengaturanPage />

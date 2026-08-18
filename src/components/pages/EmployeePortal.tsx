@@ -1,43 +1,72 @@
 'use client'
 
-import { useState, type CSSProperties } from 'react'
+import { useState, useRef, type CSSProperties } from 'react'
 import type { AuthUser } from './LoginPage'
+import dynamic from 'next/dynamic'
+import BrandMark from '@/components/BrandMark'
+import CameraCapture, { type CameraCaptureHandle, type CameraLocationInfo } from '@/components/CameraCapture'
+import ModalOverlay from '@/components/ModalOverlay'
+import { useGeolocation } from '@/hooks/useGeolocation'
+import { useOffices } from '@/hooks/useOffices'
+import { useAttendance } from '@/hooks/useAttendance'
+import { formatDistance } from '@/lib/geo'
+import type { AttendanceRecord } from '@/lib/attendanceStore'
+import {
+  PERMOHONAN_PAGE_LABELS,
+  PERMOHONAN_SUBMENU,
+  categoryFromNav,
+  categoryLabel,
+  categoryToEmpType,
+  matchesEmpRequestType,
+  type EmpRequestType,
+  type PermohonanCategory,
+} from '@/lib/permohonanTypes'
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+const GeoMap = dynamic(() => import('@/components/GeoMap'), { ssr: false })
 
-type EmployeeNav = 'home' | 'absensi' | 'permohonan' | 'riwayat' | 'profil' | 'pengumuman'
+type EmployeeNav =
+  | 'home'
+  | 'absensi/checkin'
+  | 'absensi/riwayat'
+  | 'permohonan/inbox'
+  | 'permohonan/telat'
+  | 'permohonan/cuti'
+  | 'permohonan/sakit'
+  | 'permohonan/izin'
+  | 'permohonan/wfh'
+  | 'permohonan/dinas'
+  | 'profil'
+  | 'pengumuman'
 
-const NAV: { id: EmployeeNav; label: string; icon: string }[] = [
+type NavItem = {
+  id: string
+  label: string
+  icon: string
+  sub?: { id: EmployeeNav; label: string }[]
+}
+
+const NAV: NavItem[] = [
   { id: 'home', label: 'Beranda', icon: '⊞' },
-  { id: 'absensi', label: 'Absensi', icon: '✓' },
-  { id: 'permohonan', label: 'Permohonan', icon: '📋' },
-  { id: 'riwayat', label: 'Riwayat', icon: '📅' },
+  {
+    id: 'absensi',
+    label: 'Absensi',
+    icon: '✓',
+    sub: [
+      { id: 'absensi/checkin', label: 'Check In / Out' },
+      { id: 'absensi/riwayat', label: 'Riwayat Absensi' },
+    ],
+  },
+  {
+    id: 'permohonan',
+    label: 'Permohonan',
+    icon: '📋',
+    sub: PERMOHONAN_SUBMENU.map((s) => ({ id: s.id as EmployeeNav, label: s.label })),
+  },
   { id: 'pengumuman', label: 'Pengumuman', icon: '📢' },
   { id: 'profil', label: 'Profil Saya', icon: '⊙' },
 ]
 
 // ─── Seed data ────────────────────────────────────────────────────────────────
-
-const riwayatData = [
-  { date: '12 Agu', checkIn: '08:02', checkOut: '17:05', status: 'hadir', dur: '9j 03m', loc: 'Kantor Pusat' },
-  { date: '11 Agu', checkIn: '08:11', checkOut: '17:10', status: 'hadir', dur: '9j 01m', loc: 'Kantor Pusat' },
-  { date: '10 Agu', checkIn: '09:14', checkOut: '17:00', status: 'telat', dur: '7j 46m', loc: 'Kantor Pusat' },
-  { date: '09 Agu', checkIn: '—', checkOut: '—', status: 'izin', dur: '—', loc: '—' },
-  { date: '08 Agu', checkIn: '07:58', checkOut: '16:55', status: 'hadir', dur: '8j 57m', loc: 'Kantor Pusat' },
-  { date: '07 Agu', checkIn: '08:04', checkOut: '17:08', status: 'hadir', dur: '9j 04m', loc: 'Kantor Pusat' },
-  { date: '06 Agu', checkIn: '08:00', checkOut: '17:02', status: 'hadir', dur: '9j 02m', loc: 'Kantor Pusat' },
-  { date: '05 Agu', checkIn: '08:22', checkOut: '17:00', status: 'telat', dur: '8j 38m', loc: 'Kantor Pusat' },
-  { date: '04 Agu', checkIn: '07:55', checkOut: '17:12', status: 'hadir', dur: '9j 17m', loc: 'Kantor Pusat' },
-  { date: '03 Agu', checkIn: '—', checkOut: '—', status: 'izin', dur: '—', loc: '—' },
-  { date: '02 Agu', checkIn: '08:01', checkOut: '16:58', status: 'hadir', dur: '8j 57m', loc: 'Kantor Pusat' },
-  { date: '01 Agu', checkIn: '08:09', checkOut: '17:06', status: 'hadir', dur: '8j 57m', loc: 'Kantor Pusat' },
-  { date: '31 Jul', checkIn: '08:03', checkOut: '17:01', status: 'hadir', dur: '8j 58m', loc: 'Kantor Pusat' },
-  { date: '30 Jul', checkIn: '09:05', checkOut: '17:00', status: 'telat', dur: '7j 55m', loc: 'Kantor Pusat' },
-  { date: '29 Jul', checkIn: '08:00', checkOut: '17:04', status: 'hadir', dur: '9j 04m', loc: 'Kantor Pusat' },
-  { date: '28 Jul', checkIn: '—', checkOut: '—', status: 'alfa', dur: '—', loc: '—' },
-  { date: '27 Jul', checkIn: '07:59', checkOut: '17:03', status: 'hadir', dur: '9j 04m', loc: 'Kantor Pusat' },
-  { date: '26 Jul', checkIn: '08:06', checkOut: '17:00', status: 'hadir', dur: '8j 54m', loc: 'Kantor Pusat' },
-]
 
 const announcements = [
   {
@@ -135,15 +164,15 @@ const announcements = [
 const myRequests = [
   { id: 1, no: 'PRM-2026-00120', type: 'Izin Sakit', icon: '🏥', dateLabel: '09 Agustus 2026 · 1 Hari', note: 'Surat dokter terlampir ✓', submitted: 'Diajukan 08 Agu 2026', month: 'AGUSTUS 2026', status: 'disetujui' as const, hasAttachment: true },
   { id: 2, no: 'PRM-2026-00124', type: 'WFH', icon: '🏠', dateLabel: '14 Agustus 2026 · 1 Hari', note: 'Keperluan pribadi', submitted: 'Diajukan 12 Agu 2026', month: 'AGUSTUS 2026', status: 'menunggu' as const, hasAttachment: false },
+  { id: 7, no: 'PRM-2026-00129', type: 'Izin Telat', icon: '⏰', dateLabel: '12 Agustus 2026 · Telat 74 menit', note: 'Macet di tol · rencana 08:00 · aktual 09:14', submitted: 'Diajukan 12 Agu 2026', month: 'AGUSTUS 2026', status: 'menunggu' as const, hasAttachment: false },
   { id: 3, no: 'PRM-2026-00118', type: 'Cuti Tahunan', icon: '🌴', dateLabel: '20–21 Agu 2026 · 2 Hari', note: 'Acara keluarga', submitted: 'Diajukan 15 Agu 2026', month: 'AGUSTUS 2026', status: 'menunggu' as const, hasAttachment: false },
   { id: 4, no: 'PRM-2026-00098', type: 'Cuti Tahunan', icon: '🌴', dateLabel: '20–22 Juli 2026 · 3 Hari', note: 'Keperluan pribadi', submitted: 'Diajukan 18 Jul 2026', month: 'JULI 2026', status: 'disetujui' as const, hasAttachment: false },
   { id: 5, no: 'PRM-2026-00091', type: 'Izin', icon: '📋', dateLabel: '10 Juli 2026 · 1 Hari', note: 'Urusan administrasi', submitted: 'Diajukan 09 Jul 2026', month: 'JULI 2026', status: 'ditolak' as const, hasAttachment: false },
   { id: 6, no: 'PRM-2026-00085', type: 'Dinas', icon: '🧳', dateLabel: '05–06 Juli 2026 · 2 Hari', note: 'Kunjungan klien Bandung', submitted: 'Diajukan 01 Jul 2026', month: 'JULI 2026', status: 'disetujui' as const, hasAttachment: true },
 ]
 
-type EmpRequestType = 'Cuti' | 'Izin Sakit' | 'WFH' | 'Izin' | 'Dinas'
-
 const REQUEST_TYPES: { id: EmpRequestType; icon: string; title: string; desc: string; needsDoc?: boolean }[] = [
+  { id: 'Izin Telat', icon: '⏰', title: 'Izin Telat', desc: 'Keterlambatan check-in / pulang awal' },
   { id: 'Cuti', icon: '🌴', title: 'Cuti', desc: 'Pengajuan cuti karyawan' },
   { id: 'Izin Sakit', icon: '🏥', title: 'Izin Sakit', desc: 'Sertakan bukti jika diperlukan', needsDoc: true },
   { id: 'WFH', icon: '🏠', title: 'WFH', desc: 'Bekerja dari rumah' },
@@ -174,33 +203,28 @@ function StatusBadge({ status }: { status: string }) {
 
 // ─── Home Page ────────────────────────────────────────────────────────────────
 
-function HomePage({ user }: { user: AuthUser }) {
-  const [checkedIn, setCheckedIn] = useState(false)
-  const [checkedOut, setCheckedOut] = useState(false)
-  const [checkInTime, setCheckInTime] = useState('')
+function HomePage({ user, onGoAbsensi }: { user: AuthUser; onGoAbsensi: () => void }) {
+  const { records, today } = useAttendance()
   const now = new Date()
   const timeStr = now.toLocaleTimeString('id', { hour: '2-digit', minute: '2-digit' })
-
-  const handleCheckIn = () => {
-    setCheckedIn(true)
-    setCheckInTime(timeStr)
-  }
-
-  const isLate = parseInt(timeStr.replace(':', '')) > 800
+  const checkedIn = Boolean(today && today.checkIn !== '—')
+  const checkedOut = Boolean(today && today.checkOut !== '—')
+  const recent = records.slice(0, 4)
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-      {/* Greeting */}
       <div className="card" style={{ padding: '24px 28px', background: 'linear-gradient(135deg, #2563eb 0%, #7c3aed 100%)', border: 'none', color: '#fff' }}>
         <div style={{ fontFamily: 'Outfit', fontWeight: 800, fontSize: 22 }}>Selamat pagi, {user.name.split(' ')[0]}! 👋</div>
         <div style={{ fontSize: 13, opacity: 0.85, marginTop: 4, fontFamily: 'Inter' }}>Selasa, 12 Agustus 2026 · {timeStr} WIB</div>
         <div style={{ marginTop: 20, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
           {!checkedIn ? (
-            <button onClick={handleCheckIn} style={{ padding: '10px 22px', borderRadius: 10, background: '#fff', color: '#2563eb', fontFamily: 'Outfit', fontWeight: 700, fontSize: 14, border: 'none', cursor: 'pointer', boxShadow: '0 4px 14px rgba(0,0,0,0.15)' }}>📍 Check In</button>
+            <button type="button" onClick={onGoAbsensi} style={{ padding: '10px 22px', borderRadius: 10, background: '#fff', color: '#2563eb', fontFamily: 'Outfit', fontWeight: 700, fontSize: 14, border: 'none', cursor: 'pointer', boxShadow: '0 4px 14px rgba(0,0,0,0.15)' }}>📍 Check In</button>
           ) : !checkedOut ? (
             <>
-              <div style={{ padding: '10px 22px', borderRadius: 10, background: 'rgba(255,255,255,0.2)', fontFamily: 'Outfit', fontWeight: 600, fontSize: 13 }}>✓ Masuk {checkInTime} {isLate ? '· Telat' : '· Tepat Waktu'}</div>
-              <button onClick={() => setCheckedOut(true)} style={{ padding: '10px 22px', borderRadius: 10, background: '#fff', color: '#dc2626', fontFamily: 'Outfit', fontWeight: 700, fontSize: 14, border: 'none', cursor: 'pointer' }}>🏃 Check Out</button>
+              <div style={{ padding: '10px 22px', borderRadius: 10, background: 'rgba(255,255,255,0.2)', fontFamily: 'Outfit', fontWeight: 600, fontSize: 13 }}>
+                ✓ Masuk {today?.checkIn} {today?.status === 'telat' ? '· Telat' : '· Tepat Waktu'}
+              </div>
+              <button type="button" onClick={onGoAbsensi} style={{ padding: '10px 22px', borderRadius: 10, background: '#fff', color: '#dc2626', fontFamily: 'Outfit', fontWeight: 700, fontSize: 14, border: 'none', cursor: 'pointer' }}>🏃 Check Out</button>
             </>
           ) : (
             <div style={{ padding: '10px 22px', borderRadius: 10, background: 'rgba(255,255,255,0.2)', fontFamily: 'Outfit', fontWeight: 600, fontSize: 13 }}>✓ Sudah absen hari ini</div>
@@ -208,10 +232,9 @@ function HomePage({ user }: { user: AuthUser }) {
         </div>
       </div>
 
-      {/* Stats row */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 14 }}>
         {[
-          { label: 'Hadir Bulan Ini', value: '18', unit: 'hari', color: '#10b981' },
+          { label: 'Hadir Bulan Ini', value: String(records.filter(r => r.status === 'hadir' || r.status === 'telat').length), unit: 'hari', color: '#10b981' },
           { label: 'Sisa Cuti', value: '12', unit: 'hari', color: '#2563eb' },
           { label: 'Lembur Bulan Ini', value: '4.5', unit: 'jam', color: '#7c3aed' },
           { label: 'Permohonan Pending', value: '2', unit: 'menunggu', color: '#f59e0b' },
@@ -226,14 +249,13 @@ function HomePage({ user }: { user: AuthUser }) {
         ))}
       </div>
 
-      {/* Recent activity + announcements */}
       <div className="grid-2" style={{ '--gap': '18px' } as CSSProperties}>
         <div className="card" style={{ padding: '20px 22px' }}>
           <div style={{ fontFamily: 'Outfit', fontWeight: 700, fontSize: 15, marginBottom: 16 }}>Absensi Terakhir</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {riwayatData.slice(0, 4).map((r, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 0', borderBottom: i < 3 ? '1px solid var(--border)' : 'none' }}>
-                <span className="mono" style={{ fontSize: 12, color: 'var(--muted-foreground)', width: 48, flexShrink: 0 }}>{r.date}</span>
+            {recent.map((r, i) => (
+              <div key={r.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 0', borderBottom: i < recent.length - 1 ? '1px solid var(--border)' : 'none' }}>
+                <span className="mono" style={{ fontSize: 12, color: 'var(--muted-foreground)', width: 48, flexShrink: 0 }}>{r.dateLabel}</span>
                 <span className="mono" style={{ fontSize: 12, flex: 1 }}>{r.checkIn} – {r.checkOut}</span>
                 <StatusBadge status={r.status} />
               </div>
@@ -259,43 +281,229 @@ function HomePage({ user }: { user: AuthUser }) {
   )
 }
 
-// ─── Absensi Page ─────────────────────────────────────────────────────────────
-
 function AbsensiEmpPage() {
-  const [checkedIn, setCheckedIn] = useState(false)
-  const [checkedOut, setCheckedOut] = useState(false)
-  const [checkInTime, setCheckInTime] = useState('')
-  const [checkOutTime, setCheckOutTime] = useState('')
+  const { activeOffices, nearestTo, primary } = useOffices()
+  const { today, checkIn, checkOut } = useAttendance()
+  const geo = useGeolocation({ watch: true })
   const now = new Date()
   const timeStr = now.toLocaleTimeString('id', { hour: '2-digit', minute: '2-digit' })
+  const cameraRef = useRef<CameraCaptureHandle>(null)
+  const cameraModeRef = useRef<'in' | 'out' | null>(null)
+  const [toast, setToast] = useState<string | null>(null)
+
+  const checkedIn = Boolean(today && today.checkIn !== '—')
+  const checkedOut = Boolean(today && today.checkOut !== '—')
+  const checkInTime = today?.checkIn && today.checkIn !== '—' ? today.checkIn : ''
+  const checkOutTime = today?.checkOut && today.checkOut !== '—' ? today.checkOut : ''
+  const checkedOfficeName = today?.loc && today.loc !== '—' ? today.loc : ''
+
+  const match =
+    geo.lat != null && geo.lng != null ? nearestTo(geo.lat, geo.lng) : null
+  const office = match?.office ?? primary
+  const insideGeofence = Boolean(match?.inside)
+  const distanceM = match?.distanceM ?? null
+
+  const gpsLabel =
+    geo.status === 'locating' || geo.status === 'idle'
+      ? 'Mencari lokasi…'
+      : geo.status === 'ready'
+        ? insideGeofence
+          ? `Dalam radius ${office.name} (${formatDistance(distanceM ?? 0)})`
+          : `Di luar semua kantor aktif · terdekat ${office.name} (${formatDistance(distanceM ?? 0)})`
+        : geo.errorMessage ?? 'GPS tidak aktif'
+
+  const canCheckIn = geo.status === 'ready' && insideGeofence && !checkedIn
+  const canCheckOut = checkedIn && !checkedOut && geo.status === 'ready' && insideGeofence
+
+  const mapSites = activeOffices.map((o) => ({
+    id: o.id,
+    lat: o.lat,
+    lng: o.lng,
+    name: o.name,
+    radiusM: o.radiusM,
+    highlight: office.id === o.id,
+  }))
+
+  const punchMeta = {
+    locAddress: office.address,
+    lat: geo.lat ?? undefined,
+    lng: geo.lng ?? undefined,
+    distanceM: distanceM ?? undefined,
+  }
+
+  const cameraLocation: CameraLocationInfo = {
+    officeName: office.name,
+    officeAddress: office.address,
+    officeLat: office.lat,
+    officeLng: office.lng,
+    radiusM: office.radiusM,
+    sites: mapSites,
+    userLat: geo.lat,
+    userLng: geo.lng,
+    insideGeofence,
+    gpsLabel,
+  }
+
+  const showToast = (message: string) => {
+    setToast(message)
+    window.setTimeout(() => setToast(null), 3200)
+  }
+
+  const openCamera = async (mode: 'in' | 'out') => {
+    cameraModeRef.current = mode
+    const title = mode === 'in' ? 'Check In' : 'Check Out'
+    cameraRef.current?.show(title)
+
+    const cam = navigator.mediaDevices?.getUserMedia?.bind(navigator.mediaDevices)
+    if (!window.isSecureContext || !cam) {
+      cameraRef.current?.fail('Kamera butuh HTTPS atau localhost. Buka halaman ini di Chrome (tab baru), bukan preview.')
+      return
+    }
+
+    try {
+      const stream = await cam({ video: true, audio: false })
+      cameraRef.current?.useStream(stream)
+    } catch (err) {
+      const name = err instanceof DOMException ? err.name : ''
+      if (name === 'NotAllowedError' || name === 'PermissionDeniedError') {
+        cameraRef.current?.fail('Izin kamera ditolak / diblokir. Izinkan Camera di gembok address bar, lalu coba lagi.')
+      } else if (name === 'NotFoundError') {
+        cameraRef.current?.fail('Tidak ada kamera di perangkat ini.')
+      } else {
+        cameraRef.current?.fail('Tidak bisa membuka kamera. Coba lagi.')
+      }
+    }
+  }
+
+  const handleCaptured = (photo: string) => {
+    const mode = cameraModeRef.current
+    const clock = `${String(new Date().getHours()).padStart(2, '0')}:${String(new Date().getMinutes()).padStart(2, '0')}`
+    if (mode === 'in') {
+      checkIn(office.name, { ...punchMeta, photo })
+      showToast(`Check-in berhasil · ${office.name} · ${clock}`)
+    } else if (mode === 'out') {
+      checkOut({ ...punchMeta, loc: office.name, photo })
+      showToast(`Check-out berhasil · ${office.name} · ${clock}`)
+    }
+    cameraModeRef.current = null
+  }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-      {/* GPS Map placeholder */}
+      {toast && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 20,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 3000,
+            background: '#0f172a',
+            color: '#fff',
+            padding: '12px 18px',
+            borderRadius: 12,
+            fontFamily: 'Outfit',
+            fontWeight: 600,
+            fontSize: 13,
+            boxShadow: '0 12px 40px rgba(0,0,0,0.35)',
+            maxWidth: 'min(92vw, 420px)',
+            textAlign: 'center',
+          }}
+        >
+          {toast}
+        </div>
+      )}
+      <CameraCapture ref={cameraRef} onCapture={handleCaptured} location={cameraLocation} />
       <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-        <div style={{ height: 200, background: 'linear-gradient(135deg, #e8edf8 0%, #dde5f7 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 8, color: 'var(--muted-foreground)' }}>
-          <div style={{ fontSize: 40 }}>🗺</div>
-          <div style={{ fontFamily: 'Outfit', fontWeight: 600, fontSize: 14 }}>Kantor Pusat · Jl. Sudirman No. 1</div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 }}>
-            <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#10b981', boxShadow: '0 0 0 3px rgba(16,185,129,0.25)' }} />
-            Dalam radius geofence (12m dari kantor)
+        <GeoMap
+          height={260}
+          userLat={geo.lat}
+          userLng={geo.lng}
+          showOffice
+          showGeofence
+          sites={mapSites}
+          officeLat={office.lat}
+          officeLng={office.lng}
+          officeName={office.name}
+          radiusM={office.radiusM}
+          focusLat={office.lat}
+          focusLng={office.lng}
+        />
+        <div style={{ padding: '14px 16px', borderTop: '1px solid var(--border)', display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'center', justifyContent: 'space-between' }}>
+          <div>
+            <div style={{ fontFamily: 'Outfit', fontWeight: 600, fontSize: 14 }}>
+              {office.name}
+              {activeOffices.length > 1 ? ' · terdekat' : ''}
+            </div>
+            <div style={{ fontSize: 12, color: 'var(--muted-foreground)', marginTop: 2 }}>{office.address}</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, marginTop: 6, color: 'var(--muted-foreground)' }}>
+              <div
+                style={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: '50%',
+                  background:
+                    geo.status === 'ready'
+                      ? insideGeofence
+                        ? '#10b981'
+                        : '#ef4444'
+                      : geo.status === 'locating' || geo.status === 'idle'
+                        ? '#f59e0b'
+                        : '#94a3b8',
+                  boxShadow:
+                    geo.status === 'ready' && insideGeofence
+                      ? '0 0 0 3px rgba(16,185,129,0.25)'
+                      : undefined,
+                }}
+              />
+              {gpsLabel}
+            </div>
+            {geo.lat != null && geo.lng != null && (
+              <div className="mono" style={{ fontSize: 10, color: 'var(--muted-foreground)', marginTop: 4 }}>
+                {geo.lat.toFixed(5)}, {geo.lng.toFixed(5)}
+                {geo.accuracy != null ? ` · ±${Math.round(geo.accuracy)}m` : ''}
+              </div>
+            )}
           </div>
+          <button type="button" className="btn-ghost" onClick={geo.refresh} style={{ fontSize: 12, padding: '6px 12px' }}>
+            Perbarui lokasi
+          </button>
         </div>
       </div>
 
-      {/* Check in/out */}
       <div className="grid-2" style={{ '--gap': '16px' } as CSSProperties}>
         <div className="card" style={{ padding: '22px', textAlign: 'center' }}>
           <div style={{ fontSize: 11, fontFamily: 'JetBrains Mono', color: 'var(--muted-foreground)', letterSpacing: '0.05em', marginBottom: 10 }}>CHECK IN</div>
           {checkedIn ? (
             <>
               <div style={{ fontSize: 28, fontFamily: 'Outfit', fontWeight: 800, color: '#10b981' }}>{checkInTime}</div>
-              <div style={{ fontSize: 12, color: 'var(--muted-foreground)', marginTop: 4 }}>Tepat waktu · Kantor Pusat</div>
+              <div style={{ fontSize: 12, color: 'var(--muted-foreground)', marginTop: 4 }}>
+                {today?.status === 'telat' ? 'Telat' : 'Tepat waktu'} · {checkedOfficeName || office.name}
+              </div>
+              {today?.checkInPhoto && (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img src={today.checkInPhoto} alt="" style={{ width: 64, height: 64, objectFit: 'cover', borderRadius: 12, margin: '12px auto 0', display: 'block' }} />
+              )}
             </>
           ) : (
             <>
               <div style={{ fontSize: 28, fontFamily: 'JetBrains Mono', fontWeight: 700, color: 'var(--foreground)' }}>{timeStr}</div>
-              <button onClick={() => { setCheckedIn(true); setCheckInTime(timeStr) }} className="btn-primary" style={{ marginTop: 14, width: '100%' }}>📍 Check In Sekarang</button>
+              <button
+                type="button"
+                disabled={!canCheckIn}
+                onClick={() => openCamera('in')}
+                className="btn-primary"
+                style={{ marginTop: 14, width: '100%', opacity: canCheckIn ? 1 : 0.5, cursor: canCheckIn ? 'pointer' : 'not-allowed' }}
+              >
+                Check In Sekarang
+              </button>
+              {!canCheckIn && (
+                <div style={{ fontSize: 11, color: 'var(--muted-foreground)', marginTop: 8 }}>
+                  {geo.status !== 'ready'
+                    ? 'Menunggu GPS…'
+                    : 'Harus di dalam radius salah satu kantor aktif'}
+                </div>
+              )}
             </>
           )}
         </div>
@@ -305,12 +513,29 @@ function AbsensiEmpPage() {
           {checkedOut ? (
             <>
               <div style={{ fontSize: 28, fontFamily: 'Outfit', fontWeight: 800, color: '#7c3aed' }}>{checkOutTime}</div>
-              <div style={{ fontSize: 12, color: 'var(--muted-foreground)', marginTop: 4 }}>Selesai bekerja</div>
+              <div style={{ fontSize: 12, color: 'var(--muted-foreground)', marginTop: 4 }}>Selesai bekerja · {today?.dur}</div>
+              {today?.checkOutPhoto && (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img src={today.checkOutPhoto} alt="" style={{ width: 64, height: 64, objectFit: 'cover', borderRadius: 12, margin: '12px auto 0', display: 'block' }} />
+              )}
             </>
           ) : checkedIn ? (
             <>
               <div style={{ fontSize: 28, fontFamily: 'JetBrains Mono', fontWeight: 700, color: 'var(--foreground)' }}>{timeStr}</div>
-              <button onClick={() => { setCheckedOut(true); setCheckOutTime(timeStr) }} className="btn-ghost" style={{ marginTop: 14, width: '100%', color: '#7c3aed', borderColor: 'rgba(124,58,237,0.3)' }}>🏃 Check Out Sekarang</button>
+              <button
+                type="button"
+                disabled={!canCheckOut}
+                onClick={() => openCamera('out')}
+                className="btn-ghost"
+                style={{ marginTop: 14, width: '100%', color: '#7c3aed', borderColor: 'rgba(124,58,237,0.3)', opacity: canCheckOut ? 1 : 0.5, cursor: canCheckOut ? 'pointer' : 'not-allowed' }}
+              >
+                Check Out Sekarang
+              </button>
+              {!canCheckOut && (
+                <div style={{ fontSize: 11, color: 'var(--muted-foreground)', marginTop: 8 }}>
+                  Harus di dalam radius salah satu kantor aktif
+                </div>
+              )}
             </>
           ) : (
             <>
@@ -320,32 +545,17 @@ function AbsensiEmpPage() {
           )}
         </div>
       </div>
-
-      {/* Status hari ini */}
-      <div className="card" style={{ padding: '18px 20px' }}>
-        <div style={{ fontFamily: 'Outfit', fontWeight: 700, fontSize: 14, marginBottom: 14 }}>Status Absensi Hari Ini</div>
-        <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', fontSize: 13 }}>
-          {[
-            { label: 'Shift', value: 'Reguler 08:00–17:00' },
-            { label: 'Toleransi', value: '15 menit' },
-            { label: 'Status GPS', value: 'Dalam radius' },
-            { label: 'WFH', value: checkedIn ? 'Tidak' : '—' },
-          ].map(item => (
-            <div key={item.label}>
-              <div style={{ fontSize: 11, color: 'var(--muted-foreground)', fontFamily: 'JetBrains Mono', marginBottom: 3, letterSpacing: '0.04em' }}>{item.label.toUpperCase()}</div>
-              <div style={{ fontFamily: 'Outfit', fontWeight: 600, color: 'var(--foreground)' }}>{item.value}</div>
-            </div>
-          ))}
-        </div>
-      </div>
     </div>
   )
 }
 
 // ─── Permohonan Page ──────────────────────────────────────────────────────────
 
-function PermohonanEmpPage({ user }: { user: AuthUser }) {
+function PermohonanEmpPage({ user, categoryKey }: { user: AuthUser; categoryKey: string }) {
   type Flow = 'list' | 'pick' | 'form' | 'review' | 'detail'
+  const category: PermohonanCategory = categoryFromNav(categoryKey)
+  const categoryScoped = category !== 'inbox'
+  const fixedType = categoryToEmpType(category)
   const [flow, setFlow] = useState<Flow>('list')
   const [requests, setRequests] = useState(myRequests)
   const [search, setSearch] = useState('')
@@ -356,22 +566,26 @@ function PermohonanEmpPage({ user }: { user: AuthUser }) {
   const [detailId, setDetailId] = useState<number | null>(null)
   const [formDate, setFormDate] = useState('2026-08-12')
   const [formDuration, setFormDuration] = useState('1')
+  const [formPlannedTime, setFormPlannedTime] = useState('08:00')
+  const [formActualTime, setFormActualTime] = useState('09:14')
   const [formNote, setFormNote] = useState('')
   const [formFile, setFormFile] = useState<string | null>(null)
   const [toast, setToast] = useState<string | null>(null)
 
+  const scopedRequests = requests.filter((r) => matchesEmpRequestType(r.type, category))
+
   const counts = {
-    semua: requests.length,
-    menunggu: requests.filter(r => r.status === 'menunggu').length,
-    disetujui: requests.filter(r => r.status === 'disetujui').length,
-    ditolak: requests.filter(r => r.status === 'ditolak').length,
+    semua: scopedRequests.length,
+    menunggu: scopedRequests.filter(r => r.status === 'menunggu').length,
+    disetujui: scopedRequests.filter(r => r.status === 'disetujui').length,
+    ditolak: scopedRequests.filter(r => r.status === 'ditolak').length,
   }
 
-  const filtered = requests.filter(r => {
+  const filtered = scopedRequests.filter(r => {
     const q = search.toLowerCase()
     const matchSearch = !q || r.type.toLowerCase().includes(q) || r.note.toLowerCase().includes(q) || r.no.toLowerCase().includes(q)
     const matchStatus = statusFilter === 'semua' || r.status === statusFilter
-    const matchType = typeFilter === 'Semua Jenis'
+    const matchType = categoryScoped || typeFilter === 'Semua Jenis'
       || (typeFilter === 'Cuti' && r.type.includes('Cuti'))
       || r.type === typeFilter
     const matchMonth2 = monthFilter === 'Semua Bulan'
@@ -388,7 +602,20 @@ function PermohonanEmpPage({ user }: { user: AuthUser }) {
   const typeMeta = REQUEST_TYPES.find(t => t.id === selectedType)
   const needsDoc = typeMeta?.needsDoc
 
-  const openPick = () => { setFlow('pick'); setSelectedType(null); setFormNote(''); setFormFile(null); setFormDuration('1') }
+  const openPick = () => {
+    setFormNote('')
+    setFormFile(null)
+    setFormDuration('1')
+    setFormPlannedTime('08:00')
+    setFormActualTime('09:14')
+    if (fixedType) {
+      setSelectedType(fixedType)
+      setFlow('form')
+    } else {
+      setSelectedType(null)
+      setFlow('pick')
+    }
+  }
   const pickType = (t: EmpRequestType) => { setSelectedType(t); setFlow('form') }
   const goReview = () => {
     if (!formNote.trim()) { setToast('Isi keterangan terlebih dahulu.'); setTimeout(() => setToast(null), 2000); return }
@@ -398,13 +625,19 @@ function PermohonanEmpPage({ user }: { user: AuthUser }) {
   const submit = (asDraft = false) => {
     if (!selectedType || !typeMeta) return
     const no = `PRM-2026-${String(130 + requests.length).padStart(5, '0')}`
+    const dateLabel = selectedType === 'Izin Telat'
+      ? `${new Date(formDate + 'T00:00:00').toLocaleDateString('id', { day: '2-digit', month: 'long', year: 'numeric' })} · Rencana ${formPlannedTime} · Aktual ${formActualTime}`
+      : `${new Date(formDate + 'T00:00:00').toLocaleDateString('id', { day: '2-digit', month: 'long', year: 'numeric' })} · ${formDuration} Hari`
+    const note = selectedType === 'Izin Telat' && formNote
+      ? `${formNote} · rencana ${formPlannedTime} · aktual ${formActualTime}`
+      : formNote || (asDraft ? 'Draft' : '—')
     setRequests(r => [{
       id: Date.now(),
       no,
       type: selectedType === 'Cuti' ? 'Cuti Tahunan' : selectedType,
       icon: typeMeta.icon,
-      dateLabel: `${new Date(formDate + 'T00:00:00').toLocaleDateString('id', { day: '2-digit', month: 'long', year: 'numeric' })} · ${formDuration} Hari`,
-      note: formNote || (asDraft ? 'Draft' : '—'),
+      dateLabel,
+      note,
       submitted: asDraft ? 'Disimpan sebagai draft' : 'Diajukan hari ini',
       month: 'AGUSTUS 2026',
       status: 'menunggu' as const,
@@ -424,15 +657,14 @@ function PermohonanEmpPage({ user }: { user: AuthUser }) {
   const detail = requests.find(r => r.id === detailId)
 
   return (
-    <div className="card" style={{ overflow: 'hidden', position: 'relative' }}>
+    <>
       {toast && (
         <div className="toast" style={{ bottom: 24, right: 24 }}>{toast}</div>
       )}
 
-      {/* ── Type pick / Form / Review modal ── */}
       {(flow === 'pick' || flow === 'form' || flow === 'review') && (
-        <div onClick={() => setFlow('list')} style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-          <div onClick={e => e.stopPropagation()} className="card" style={{ width: '100%', maxWidth: flow === 'review' ? 560 : 520, maxHeight: '92vh', overflow: 'auto', boxShadow: '0 24px 60px rgba(0,0,0,0.25)' }}>
+        <ModalOverlay onClose={() => setFlow('list')} padding={16}>
+          <div onClick={e => e.stopPropagation()} className="modal-panel" style={{ width: '100%', maxWidth: flow === 'review' ? 560 : 520, maxHeight: '92vh', overflow: 'auto' }}>
             {flow === 'pick' && (
               <>
                 <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -457,7 +689,7 @@ function PermohonanEmpPage({ user }: { user: AuthUser }) {
             {flow === 'form' && selectedType && typeMeta && (
               <>
                 <div style={{ padding: '18px 24px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <button onClick={() => setFlow('pick')} className="btn-ghost" style={{ padding: '6px 10px', fontSize: 13 }}>←</button>
+                  <button onClick={() => setFlow(fixedType ? 'list' : 'pick')} className="btn-ghost" style={{ padding: '6px 10px', fontSize: 13 }}>←</button>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontFamily: 'Outfit', fontWeight: 800, fontSize: 16 }}>{typeMeta.icon} {typeMeta.title}</div>
                     <div style={{ fontSize: 12, color: 'var(--muted-foreground)', marginTop: 2 }}>Langkah 1 dari 2 · Detail Permohonan</div>
@@ -467,14 +699,27 @@ function PermohonanEmpPage({ user }: { user: AuthUser }) {
                 <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 16 }}>
                   <div>
                     <label style={{ fontFamily: 'Outfit', fontWeight: 600, fontSize: 12, color: 'var(--muted-foreground)', display: 'block', marginBottom: 6 }}>
-                      {selectedType === 'Izin Sakit' ? 'Tanggal Sakit' : selectedType === 'Dinas' ? 'Tanggal Dinas' : 'Tanggal'}
+                      {selectedType === 'Izin Sakit' ? 'Tanggal Sakit' : selectedType === 'Dinas' ? 'Tanggal Dinas' : selectedType === 'Izin Telat' ? 'Tanggal Kejadian' : 'Tanggal'}
                     </label>
                     <input type="date" value={formDate} onChange={e => setFormDate(e.target.value)} style={{ width: '100%', padding: '11px 14px', borderRadius: 12, border: '1px solid var(--border)', background: 'var(--muted)', color: 'var(--foreground)', fontFamily: 'Inter', fontSize: 14, outline: 'none', boxSizing: 'border-box' }} />
                   </div>
+                  {selectedType === 'Izin Telat' ? (
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                      <div>
+                        <label style={{ fontFamily: 'Outfit', fontWeight: 600, fontSize: 12, color: 'var(--muted-foreground)', display: 'block', marginBottom: 6 }}>Jam Rencana</label>
+                        <input type="time" value={formPlannedTime} onChange={e => setFormPlannedTime(e.target.value)} style={{ width: '100%', padding: '11px 14px', borderRadius: 12, border: '1px solid var(--border)', background: 'var(--muted)', color: 'var(--foreground)', fontFamily: 'Inter', fontSize: 14, outline: 'none', boxSizing: 'border-box' }} />
+                      </div>
+                      <div>
+                        <label style={{ fontFamily: 'Outfit', fontWeight: 600, fontSize: 12, color: 'var(--muted-foreground)', display: 'block', marginBottom: 6 }}>Jam Aktual</label>
+                        <input type="time" value={formActualTime} onChange={e => setFormActualTime(e.target.value)} style={{ width: '100%', padding: '11px 14px', borderRadius: 12, border: '1px solid var(--border)', background: 'var(--muted)', color: 'var(--foreground)', fontFamily: 'Inter', fontSize: 14, outline: 'none', boxSizing: 'border-box' }} />
+                      </div>
+                    </div>
+                  ) : (
                   <div>
                     <label style={{ fontFamily: 'Outfit', fontWeight: 600, fontSize: 12, color: 'var(--muted-foreground)', display: 'block', marginBottom: 6 }}>Durasi (hari)</label>
                     <input type="number" min={1} max={30} value={formDuration} onChange={e => setFormDuration(e.target.value)} style={{ width: '100%', padding: '11px 14px', borderRadius: 12, border: '1px solid var(--border)', background: 'var(--muted)', color: 'var(--foreground)', fontFamily: 'Inter', fontSize: 14, outline: 'none', boxSizing: 'border-box' }} />
                   </div>
+                  )}
                   {(selectedType === 'Cuti' || selectedType === 'WFH') && (
                     <div>
                       <label style={{ fontFamily: 'Outfit', fontWeight: 600, fontSize: 12, color: 'var(--muted-foreground)', display: 'block', marginBottom: 6 }}>Sisa kuota</label>
@@ -528,7 +773,9 @@ function PermohonanEmpPage({ user }: { user: AuthUser }) {
                 <div style={{ padding: '20px 24px' }}>
                   <div style={{ border: '1px solid var(--border)', borderRadius: 14, padding: '22px 20px', background: 'var(--muted)' }}>
                     <div style={{ textAlign: 'center', marginBottom: 18 }}>
-                      <div style={{ width: 44, height: 44, borderRadius: 12, background: 'linear-gradient(135deg,#2563eb,#7c3aed)', color: '#fff', fontFamily: 'Outfit', fontWeight: 900, fontSize: 18, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: 10 }}>H</div>
+                      <div style={{ display: 'inline-flex', marginBottom: 10 }}>
+                      <BrandMark size={44} />
+                    </div>
                       <div style={{ fontFamily: 'Outfit', fontWeight: 800, fontSize: 15, letterSpacing: '0.04em' }}>PERMOHONAN {selectedType.toUpperCase()}</div>
                       <div className="mono" style={{ fontSize: 11, color: 'var(--muted-foreground)', marginTop: 4 }}>No. PRM-2026-00128</div>
                     </div>
@@ -581,13 +828,12 @@ function PermohonanEmpPage({ user }: { user: AuthUser }) {
               </>
             )}
           </div>
-        </div>
+        </ModalOverlay>
       )}
 
-      {/* Detail modal */}
       {flow === 'detail' && detail && (
-        <div onClick={() => { setFlow('list'); setDetailId(null) }} style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-          <div onClick={e => e.stopPropagation()} className="card" style={{ width: '100%', maxWidth: 440, padding: '22px 24px', boxShadow: '0 24px 60px rgba(0,0,0,0.25)' }}>
+        <ModalOverlay onClose={() => { setFlow('list'); setDetailId(null) }} padding={16}>
+          <div onClick={e => e.stopPropagation()} className="modal-panel" style={{ width: '100%', maxWidth: 440, padding: '22px 24px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
               <div>
                 <div style={{ fontFamily: 'Outfit', fontWeight: 800, fontSize: 16 }}>{detail.icon} {detail.type}</div>
@@ -600,16 +846,23 @@ function PermohonanEmpPage({ user }: { user: AuthUser }) {
             <div style={{ marginTop: 8, fontSize: 14, fontFamily: 'Outfit' }}>{detail.note}</div>
             <div style={{ marginTop: 12, fontSize: 12, color: 'var(--muted-foreground)' }}>{detail.submitted}</div>
           </div>
-        </div>
+        </ModalOverlay>
       )}
 
+      <div className="card" style={{ overflow: 'hidden' }}>
       {/* Header */}
       <div style={{ padding: '22px 24px 18px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
         <div>
-          <div style={{ fontFamily: 'Outfit', fontWeight: 800, fontSize: 18 }}>Permohonan Saya</div>
-          <div style={{ fontSize: 13, color: 'var(--muted-foreground)', marginTop: 4 }}>Kelola pengajuan cuti, izin, dan permohonan lainnya</div>
+          <div style={{ fontFamily: 'Outfit', fontWeight: 800, fontSize: 18 }}>{categoryLabel(category)}</div>
+          <div style={{ fontSize: 13, color: 'var(--muted-foreground)', marginTop: 4 }}>
+            {categoryScoped
+              ? `Riwayat dan pengajuan ${categoryLabel(category).replace('Permohonan — ', '').toLowerCase()}`
+              : 'Kelola semua pengajuan cuti, izin, dan permohonan lainnya'}
+          </div>
         </div>
-        <button className="btn-primary" onClick={openPick}>+ Ajukan Permohonan</button>
+        <button className="btn-primary" onClick={openPick}>
+          + Ajukan {fixedType ?? 'Permohonan'}
+        </button>
       </div>
 
       {/* Summary */}
@@ -645,9 +898,11 @@ function PermohonanEmpPage({ user }: { user: AuthUser }) {
             <option value="disetujui">Disetujui</option>
             <option value="ditolak">Ditolak</option>
           </select>
+          {!categoryScoped && (
           <select value={typeFilter} onChange={e => setTypeFilter(e.target.value)} style={selectStyle}>
-            {['Semua Jenis', 'Cuti', 'Izin Sakit', 'WFH', 'Izin', 'Dinas'].map(t => <option key={t}>{t}</option>)}
+            {['Semua Jenis', 'Cuti', 'Izin Telat', 'Izin Sakit', 'WFH', 'Izin', 'Dinas'].map(t => <option key={t}>{t}</option>)}
           </select>
+          )}
           <select value={monthFilter} onChange={e => setMonthFilter(e.target.value)} style={selectStyle}>
             {['Semua Bulan', 'Agustus 2026', 'Juli 2026'].map(t => <option key={t}>{t}</option>)}
           </select>
@@ -686,25 +941,61 @@ function PermohonanEmpPage({ user }: { user: AuthUser }) {
         ))}
       </div>
     </div>
+    </>
   )
 }
 
 // ─── Riwayat Page ─────────────────────────────────────────────────────────────
 
+function monthLabelFromDateKey(dateKey: string): string {
+  const parts = dateKey.split('-')
+  const y = parts[0]
+  const m = Number(parts[1])
+  const names = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember']
+  return `${names[m - 1] ?? 'Bulan'} ${y}`
+}
+
+function monthKeyFromLabel(label: string): string {
+  const map: Record<string, string> = {
+    Januari: '-01-', Februari: '-02-', Maret: '-03-', April: '-04-',
+    Mei: '-05-', Juni: '-06-', Juli: '-07-', Agustus: '-08-',
+    September: '-09-', Oktober: '-10-', November: '-11-', Desember: '-12-',
+  }
+  for (const [name, key] of Object.entries(map)) {
+    if (label.startsWith(name)) return key
+  }
+  return ''
+}
+
 function RiwayatEmpPage() {
+  const { records } = useAttendance()
+  const monthOptions = Array.from(
+    new Set([
+      monthLabelFromDateKey(new Date().toISOString().slice(0, 10)),
+      
+      ...records.map((r) => monthLabelFromDateKey(r.dateKey)),
+    ]),
+  )
   const [search, setSearch] = useState('')
-  const [month, setMonth] = useState('Agustus 2026')
+  const [month, setMonth] = useState(monthOptions[0] ?? 'Agustus 2026')
   const [statusFilter, setStatusFilter] = useState('semua')
   const [showFilter, setShowFilter] = useState(false)
   const [page, setPage] = useState(1)
-  const [detail, setDetail] = useState<typeof riwayatData[0] | null>(null)
+  const [detail, setDetail] = useState<AttendanceRecord | null>(null)
   const perPage = 6
 
-  const monthKey = month.startsWith('Agustus') ? 'Agu' : 'Jul'
-  const monthFiltered = riwayatData.filter(r => r.date.includes(monthKey))
+  const monthKey = monthKeyFromLabel(month)
+  const monthFiltered = records.filter(r =>
+    monthKey ? r.dateKey.includes(monthKey) && r.dateKey.startsWith(month.split(' ').pop() ?? '') : true,
+  )
   const filtered = monthFiltered.filter(r => {
     const q = search.toLowerCase()
-    const matchSearch = !q || r.date.toLowerCase().includes(q) || r.status.includes(q) || r.checkIn.includes(q)
+    const matchSearch =
+      !q ||
+      r.dateLabel.toLowerCase().includes(q) ||
+      r.status.includes(q) ||
+      r.checkIn.includes(q) ||
+      r.loc.toLowerCase().includes(q)
     const matchStatus = statusFilter === 'semua' || r.status === statusFilter
     return matchSearch && matchStatus
   })
@@ -713,14 +1004,12 @@ function RiwayatEmpPage() {
   const currentPage = Math.min(page, totalPages)
   const paged = filtered.slice((currentPage - 1) * perPage, currentPage * perPage)
 
-  const summary = month.startsWith('Agustus')
-    ? { hadir: 18, telat: 3, izin: 2, alfa: 0 }
-    : {
-        hadir: monthFiltered.filter(r => r.status === 'hadir').length,
-        telat: monthFiltered.filter(r => r.status === 'telat').length,
-        izin: monthFiltered.filter(r => r.status === 'izin').length,
-        alfa: monthFiltered.filter(r => r.status === 'alfa').length,
-      }
+  const summary = {
+    hadir: monthFiltered.filter(r => r.status === 'hadir').length,
+    telat: monthFiltered.filter(r => r.status === 'telat').length,
+    izin: monthFiltered.filter(r => r.status === 'izin').length,
+    alfa: monthFiltered.filter(r => r.status === 'alfa').length,
+  }
 
   const selectStyle: CSSProperties = {
     padding: '10px 14px',
@@ -736,14 +1025,14 @@ function RiwayatEmpPage() {
   }
 
   return (
-    <div className="card" style={{ overflow: 'hidden' }}>
-      {detail && (
-        <div onClick={() => setDetail(null)} style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-          <div onClick={e => e.stopPropagation()} className="card" style={{ width: '100%', maxWidth: 420, padding: '22px 24px', boxShadow: '0 24px 60px rgba(0,0,0,0.25)' }}>
+    <>
+    {detail && (
+      <ModalOverlay onClose={() => setDetail(null)}>
+        <div onClick={e => e.stopPropagation()} className="modal-panel" style={{ width: '100%', maxWidth: 440, padding: '22px 24px', maxHeight: '90vh', overflowY: 'auto' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
               <div>
                 <div style={{ fontFamily: 'Outfit', fontWeight: 800, fontSize: 16 }}>Detail Absensi</div>
-                <div style={{ fontSize: 12, color: 'var(--muted-foreground)', marginTop: 2 }}>{detail.date} 2026</div>
+                <div style={{ fontSize: 12, color: 'var(--muted-foreground)', marginTop: 2 }}>{detail.dateLabel} {detail.year}</div>
               </div>
               <button onClick={() => setDetail(null)} style={{ width: 30, height: 30, borderRadius: 8, border: '1px solid var(--border)', background: 'var(--muted)', cursor: 'pointer', color: 'var(--muted-foreground)' }}>✕</button>
             </div>
@@ -752,20 +1041,70 @@ function RiwayatEmpPage() {
                 { label: 'Check In', value: detail.checkIn },
                 { label: 'Check Out', value: detail.checkOut },
                 { label: 'Durasi', value: detail.dur },
-                { label: 'Lokasi', value: detail.loc },
+                { label: 'Status', value: detail.status },
               ].map(f => (
                 <div key={f.label} style={{ background: 'var(--muted)', borderRadius: 10, padding: '12px 14px' }}>
                   <div style={{ fontSize: 10, fontFamily: 'JetBrains Mono', color: 'var(--muted-foreground)', marginBottom: 4 }}>{f.label.toUpperCase()}</div>
-                  <div className="mono" style={{ fontSize: 15, fontWeight: 700 }}>{f.value}</div>
+                  <div className="mono" style={{ fontSize: 15, fontWeight: 700, textTransform: f.label === 'Status' ? 'capitalize' : undefined }}>{f.value}</div>
                 </div>
               ))}
             </div>
-            <StatusBadge status={detail.status} />
-          </div>
-        </div>
-      )}
 
-      {/* Header */}
+            <div style={{ background: 'var(--muted)', borderRadius: 10, padding: '12px 14px', marginBottom: 14 }}>
+              <div style={{ fontSize: 10, fontFamily: 'JetBrains Mono', color: 'var(--muted-foreground)', marginBottom: 6 }}>LOKASI CHECK IN</div>
+              <div style={{ fontFamily: 'Outfit', fontWeight: 700, fontSize: 14 }}>{detail.loc}</div>
+              {detail.locAddress && (
+                <div style={{ fontSize: 12, color: 'var(--muted-foreground)', marginTop: 4, lineHeight: 1.45 }}>{detail.locAddress}</div>
+              )}
+              {(detail.lat != null && detail.lng != null) && (
+                <div className="mono" style={{ fontSize: 11, color: 'var(--muted-foreground)', marginTop: 6 }}>
+                  {detail.lat.toFixed(5)}, {detail.lng.toFixed(5)}
+                  {detail.distanceM != null ? ` · ${formatDistance(detail.distanceM)} dari kantor` : ''}
+                </div>
+              )}
+            </div>
+
+            {detail.checkOut !== '—' && (detail.outLoc || detail.outLocAddress) && (
+              <div style={{ background: 'var(--muted)', borderRadius: 10, padding: '12px 14px', marginBottom: 14 }}>
+                <div style={{ fontSize: 10, fontFamily: 'JetBrains Mono', color: 'var(--muted-foreground)', marginBottom: 6 }}>LOKASI CHECK OUT</div>
+                <div style={{ fontFamily: 'Outfit', fontWeight: 700, fontSize: 14 }}>{detail.outLoc || detail.loc}</div>
+                {detail.outLocAddress && (
+                  <div style={{ fontSize: 12, color: 'var(--muted-foreground)', marginTop: 4, lineHeight: 1.45 }}>{detail.outLocAddress}</div>
+                )}
+                {(detail.outLat != null && detail.outLng != null) && (
+                  <div className="mono" style={{ fontSize: 11, color: 'var(--muted-foreground)', marginTop: 6 }}>
+                    {detail.outLat.toFixed(5)}, {detail.outLng.toFixed(5)}
+                    {detail.outDistanceM != null ? ` · ${formatDistance(detail.outDistanceM)} dari kantor` : ''}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {(detail.checkInPhoto || detail.checkOutPhoto) && (
+              <div style={{ display: 'grid', gridTemplateColumns: detail.checkInPhoto && detail.checkOutPhoto ? '1fr 1fr' : '1fr', gap: 10, marginBottom: 14 }}>
+                {detail.checkInPhoto && (
+                  <div>
+                    <div style={{ fontSize: 10, fontFamily: 'JetBrains Mono', color: 'var(--muted-foreground)', marginBottom: 6 }}>FOTO CHECK IN</div>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={detail.checkInPhoto} alt="Foto check in" style={{ width: '100%', borderRadius: 12, display: 'block', objectFit: 'cover', aspectRatio: '3 / 4' }} />
+                  </div>
+                )}
+                {detail.checkOutPhoto && (
+                  <div>
+                    <div style={{ fontSize: 10, fontFamily: 'JetBrains Mono', color: 'var(--muted-foreground)', marginBottom: 6 }}>FOTO CHECK OUT</div>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={detail.checkOutPhoto} alt="Foto check out" style={{ width: '100%', borderRadius: 12, display: 'block', objectFit: 'cover', aspectRatio: '3 / 4' }} />
+                  </div>
+                )}
+              </div>
+            )}
+
+            <StatusBadge status={detail.status} />
+        </div>
+      </ModalOverlay>
+    )}
+
+    <div className="card" style={{ overflow: 'hidden' }}>
       <div style={{ padding: '22px 24px 18px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
         <div>
           <div style={{ fontFamily: 'Outfit', fontWeight: 800, fontSize: 18, color: 'var(--foreground)' }}>Riwayat Absensi</div>
@@ -774,7 +1113,6 @@ function RiwayatEmpPage() {
         <span className="mono" style={{ fontSize: 12, padding: '6px 12px', borderRadius: 99, background: 'var(--muted)', color: 'var(--muted-foreground)', fontWeight: 600, whiteSpace: 'nowrap' }}>{month}</span>
       </div>
 
-      {/* Search + filters */}
       <div style={{ padding: '16px 24px', borderBottom: '1px solid var(--border)', display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
         <div style={{ background: 'var(--muted)', borderRadius: 12, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 200 }}>
           <span style={{ fontSize: 14 }}>🔍</span>
@@ -786,8 +1124,9 @@ function RiwayatEmpPage() {
           />
         </div>
         <select value={month} onChange={e => { setMonth(e.target.value); setPage(1) }} style={selectStyle}>
-          <option>Agustus 2026</option>
-          <option>Juli 2026</option>
+          {monthOptions.map((opt) => (
+            <option key={opt} value={opt}>{opt}</option>
+          ))}
         </select>
         <div style={{ position: 'relative' }}>
           <button onClick={() => setShowFilter(s => !s)} style={{ ...selectStyle, display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -809,7 +1148,6 @@ function RiwayatEmpPage() {
         </div>
       </div>
 
-      {/* Ringkasan */}
       <div style={{ padding: '18px 24px', borderBottom: '1px solid var(--border)' }}>
         <div style={{ fontFamily: 'Outfit', fontWeight: 700, fontSize: 14, marginBottom: 12 }}>Ringkasan {month.split(' ')[0]}</div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 12 }}>
@@ -827,7 +1165,6 @@ function RiwayatEmpPage() {
         </div>
       </div>
 
-      {/* Table */}
       <div style={{ overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 560 }}>
           <thead>
@@ -840,13 +1177,13 @@ function RiwayatEmpPage() {
           <tbody>
             {paged.map((r, i) => (
               <tr
-                key={`${r.date}-${i}`}
+                key={r.id}
                 onClick={() => setDetail(r)}
                 style={{ borderBottom: i < paged.length - 1 ? '1px solid var(--border)' : 'none', cursor: 'pointer', transition: 'background 0.12s' }}
                 onMouseEnter={e => (e.currentTarget.style.background = 'var(--muted)')}
                 onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
               >
-                <td style={{ padding: '14px 20px' }}><span className="mono" style={{ fontSize: 13, fontWeight: 600 }}>{r.date}</span></td>
+                <td style={{ padding: '14px 20px' }}><span className="mono" style={{ fontSize: 13, fontWeight: 600 }}>{r.dateLabel}</span></td>
                 <td style={{ padding: '14px 20px' }}><span className="mono" style={{ fontSize: 13, color: r.status === 'telat' ? '#f59e0b' : 'var(--foreground)' }}>{r.checkIn}</span></td>
                 <td style={{ padding: '14px 20px' }}><span className="mono" style={{ fontSize: 13 }}>{r.checkOut}</span></td>
                 <td style={{ padding: '14px 20px' }}><span className="mono" style={{ fontSize: 12, color: 'var(--muted-foreground)' }}>{r.dur}</span></td>
@@ -861,7 +1198,6 @@ function RiwayatEmpPage() {
         )}
       </div>
 
-      {/* Pagination */}
       <div style={{ padding: '16px 24px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8 }}>
         <button
           onClick={() => setPage(p => Math.max(1, p - 1))}
@@ -882,6 +1218,7 @@ function RiwayatEmpPage() {
         >→</button>
       </div>
     </div>
+    </>
   )
 }
 
@@ -1117,25 +1454,36 @@ function ProfilPage({ user }: { user: AuthUser }) {
 export default function EmployeePortal({ user, onLogout, dark, onToggleDark }: { user: AuthUser; onLogout: () => void; dark: boolean; onToggleDark: () => void }) {
   const [nav, setNav] = useState<EmployeeNav>('home')
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
+  const [expanded, setExpanded] = useState<string[]>(['absensi', 'permohonan'])
 
   const pageTitles: Record<EmployeeNav, string> = {
     home: 'Beranda',
-    absensi: 'Absensi',
-    permohonan: 'Permohonan',
-    riwayat: 'Riwayat Absensi',
+    'absensi/checkin': 'Absensi — Check In / Out',
+    'absensi/riwayat': 'Absensi — Riwayat',
+    ...PERMOHONAN_PAGE_LABELS,
     pengumuman: 'Pengumuman',
     profil: 'Profil Saya',
+  } as Record<EmployeeNav, string>
+
+  const goTo = (id: EmployeeNav) => {
+    setNav(id)
+    setMobileNavOpen(false)
   }
 
-  const goTo = (id: EmployeeNav) => { setNav(id); setMobileNavOpen(false) }
+  const toggleExpand = (id: string) => {
+    setExpanded((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
+  }
+
+  const activeRoot = nav.split('/')[0]
 
   return (
     <div className="app-shell">
-      {/* Sidebar */}
       <div className={`sidebar-backdrop ${mobileNavOpen ? 'show' : ''}`} onClick={() => setMobileNavOpen(false)} />
       <aside className={`app-sidebar ${mobileNavOpen ? 'open' : ''}`} style={{ width: 210 }}>
         <div style={{ padding: '0 6px 24px', display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{ width: 34, height: 34, borderRadius: 10, background: 'linear-gradient(135deg, #2563eb, #7c3aed)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, color: '#fff', fontWeight: 800, fontFamily: 'Outfit', flexShrink: 0 }}>H</div>
+          <div style={{ flexShrink: 0 }}>
+            <BrandMark size={34} />
+          </div>
           <div style={{ flex: 1 }}>
             <div style={{ fontFamily: 'Outfit', fontWeight: 800, fontSize: 15, color: 'var(--foreground)' }}>HadiR</div>
             <div style={{ fontSize: 10, color: 'var(--muted-foreground)', fontFamily: 'JetBrains Mono' }}>Portal Karyawan</div>
@@ -1145,13 +1493,65 @@ export default function EmployeePortal({ user, onLogout, dark, onToggleDark }: {
 
         <div style={{ fontSize: 10, fontFamily: 'JetBrains Mono', color: 'var(--muted-foreground)', padding: '0 8px', marginBottom: 6, letterSpacing: '0.08em' }}>MENU</div>
 
-        <nav style={{ display: 'flex', flexDirection: 'column', gap: 2, flex: 1 }}>
-          {NAV.map(item => (
-            <button key={item.id} onClick={() => goTo(item.id)} className={`sidebar-link ${nav === item.id ? 'active' : ''}`} style={{ background: 'none', border: 'none', textAlign: 'left', width: '100%' }}>
-              <span style={{ fontSize: 16, width: 20, textAlign: 'center' }}>{item.icon}</span>
-              {item.label}
-            </button>
-          ))}
+        <nav style={{ display: 'flex', flexDirection: 'column', gap: 2, flex: 1, overflowY: 'auto' }}>
+          {NAV.map((item) => {
+            const hasSub = Boolean(item.sub?.length)
+            const isRootActive = activeRoot === item.id
+            const isExpanded = expanded.includes(item.id)
+
+            return (
+              <div key={item.id}>
+                <button
+                  type="button"
+                  className={`sidebar-link ${!hasSub && nav === item.id ? 'active' : isRootActive && hasSub ? 'active' : ''}`}
+                  style={{ background: 'none', border: 'none', textAlign: 'left', width: '100%', justifyContent: 'space-between' }}
+                  onClick={() => {
+                    if (hasSub && item.sub) {
+                      toggleExpand(item.id)
+                      if (!isExpanded) goTo(item.sub[0].id)
+                    } else {
+                      goTo(item.id as EmployeeNav)
+                    }
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <span style={{ fontSize: 16, width: 20, textAlign: 'center' }}>{item.icon}</span>
+                    {item.label}
+                  </div>
+                  {hasSub && (
+                    <span style={{ fontSize: 10, color: 'var(--muted-foreground)', transform: isExpanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>▾</span>
+                  )}
+                </button>
+
+                {hasSub && isExpanded && item.sub && (
+                  <div className="slide-down" style={{ marginLeft: 14, marginTop: 2, marginBottom: 4, display: 'flex', flexDirection: 'column', gap: 1, borderLeft: '2px solid var(--border)', paddingLeft: 12 }}>
+                    {item.sub.map((sub) => (
+                      <button
+                        key={sub.id}
+                        type="button"
+                        onClick={() => goTo(sub.id)}
+                        style={{
+                          textAlign: 'left',
+                          border: 'none',
+                          background: 'none',
+                          padding: '7px 8px',
+                          borderRadius: 8,
+                          fontSize: 13,
+                          fontFamily: 'Outfit',
+                          fontWeight: nav === sub.id ? 600 : 500,
+                          color: nav === sub.id ? 'var(--primary)' : 'var(--muted-foreground)',
+                          cursor: 'pointer',
+                          transition: 'all 0.12s',
+                        }}
+                      >
+                        {sub.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )
+          })}
         </nav>
 
         <div style={{ marginTop: 12, padding: '14px 8px 0', borderTop: '1px solid var(--border)' }}>
@@ -1166,7 +1566,6 @@ export default function EmployeePortal({ user, onLogout, dark, onToggleDark }: {
         </div>
       </aside>
 
-      {/* Main */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
         <header className="app-header" style={{ position: 'sticky', top: 0, zIndex: 30, background: 'var(--card)', borderBottom: '1px solid var(--border)', padding: '14px 24px' }}>
           <button onClick={() => setMobileNavOpen(true)} className="mobile-menu-btn">☰</button>
@@ -1182,10 +1581,10 @@ export default function EmployeePortal({ user, onLogout, dark, onToggleDark }: {
         </header>
 
         <main style={{ padding: '28px 24px', flex: 1, minWidth: 0 }}>
-          {nav === 'home' && <HomePage user={user} />}
-          {nav === 'absensi' && <AbsensiEmpPage />}
-          {nav === 'permohonan' && <PermohonanEmpPage user={user} />}
-          {nav === 'riwayat' && <RiwayatEmpPage />}
+          {nav === 'home' && <HomePage user={user} onGoAbsensi={() => goTo('absensi/checkin')} />}
+          {nav === 'absensi/checkin' && <AbsensiEmpPage />}
+          {nav === 'absensi/riwayat' && <RiwayatEmpPage />}
+          {nav.startsWith('permohonan/') && <PermohonanEmpPage user={user} categoryKey={nav} />}
           {nav === 'pengumuman' && <PengumumanEmpPage />}
           {nav === 'profil' && <ProfilPage user={user} />}
         </main>

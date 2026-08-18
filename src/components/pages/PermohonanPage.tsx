@@ -1,9 +1,11 @@
 'use client'
 
 import { useState, type CSSProperties } from 'react'
+import ModalOverlay from '@/components/ModalOverlay'
+import { categoryFromNav, categoryLabel, matchesHrRequestType, type PermohonanCategory } from '@/lib/permohonanTypes'
 
 type RequestStatus = 'menunggu' | 'disetujui' | 'ditolak' | 'dikembalikan'
-type RequestType = 'Cuti' | 'Sakit' | 'WFH' | 'Izin' | 'Dinas'
+type RequestType = 'Cuti' | 'Sakit' | 'WFH' | 'Izin' | 'Dinas' | 'Telat'
 type InboxTab = 'perlu' | 'semua' | 'riwayat'
 
 interface HrRequest {
@@ -29,6 +31,15 @@ interface HrRequest {
 }
 
 const SEED: HrRequest[] = [
+  {
+    id: 129, no: 'PRM-2026-00129', employee: 'Budi Santoso', nik: 'EMP00088', jabatan: 'Marketing Manager', dept: 'Marketing', manager: 'Yuli Andini',
+    type: 'Telat', date: '12 Agu 2026', duration: '—', note: 'Macet di tol, rencana 08:00 · aktual 09:14.', status: 'menunggu',
+    avatar: 'BS', color: '#7c3aed', month: 'Agustus 2026', submittedAt: '12 Agu · 09:20', hasAttachment: false,
+    timeline: [
+      { label: 'Pengajuan dibuat', time: '12 Agu · 09:20', done: true },
+      { label: 'Menunggu persetujuan', time: '', done: false },
+    ],
+  },
   {
     id: 128, no: 'PRM-2026-00128', employee: 'Mika', nik: 'EMP00123', jabatan: 'Software Engineer', dept: 'Engineering', manager: 'Budi Santoso',
     type: 'Cuti', date: '20–22 Agu 2026', duration: '3 Hari', note: 'Keperluan pribadi.', status: 'menunggu',
@@ -105,7 +116,7 @@ const SEED: HrRequest[] = [
 ]
 
 const TYPE_ICON: Record<RequestType, string> = {
-  Cuti: '🌴', Sakit: '🏥', WFH: '🏠', Izin: '📋', Dinas: '🧳',
+  Cuti: '🌴', Sakit: '🏥', WFH: '🏠', Izin: '📋', Dinas: '🧳', Telat: '⏰',
 }
 
 function Avatar({ initials, color, size = 36 }: { initials: string; color: string; size?: number }) {
@@ -142,8 +153,8 @@ function DetailDrawer({
   onReturn: () => void
 }) {
   return (
-    <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.45)', display: 'flex', justifyContent: 'flex-end' }}>
-      <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 440, height: '100%', background: 'var(--card)', borderLeft: '1px solid var(--border)', overflowY: 'auto', boxShadow: '-16px 0 48px rgba(0,0,0,0.15)' }}>
+    <ModalOverlay onClose={onClose} align="drawer">
+      <div onClick={e => e.stopPropagation()} className="modal-panel" style={{ width: '100%', maxWidth: 440, height: '100%', borderLeft: '1px solid var(--border)', borderRadius: 0, overflowY: 'auto', boxShadow: '-16px 0 48px rgba(0,0,0,0.15)' }}>
         <div style={{ padding: '18px 20px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', position: 'sticky', top: 0, background: 'var(--card)', zIndex: 1 }}>
           <div>
             <div style={{ fontFamily: 'Outfit', fontWeight: 800, fontSize: 16 }}>Permohonan #{req.no}</div>
@@ -168,7 +179,7 @@ function DetailDrawer({
           {/* Detail */}
           <div>
             <div style={{ fontSize: 10, fontFamily: 'JetBrains Mono', color: 'var(--muted-foreground)', letterSpacing: '0.08em', marginBottom: 10 }}>DETAIL</div>
-            <div style={{ fontFamily: 'Outfit', fontWeight: 700, fontSize: 15 }}>{TYPE_ICON[req.type]} {req.type === 'Sakit' ? 'Izin Sakit' : req.type === 'Cuti' ? 'Cuti Tahunan' : req.type}</div>
+            <div style={{ fontFamily: 'Outfit', fontWeight: 700, fontSize: 15 }}>{TYPE_ICON[req.type]} {req.type === 'Sakit' ? 'Izin Sakit' : req.type === 'Cuti' ? 'Cuti Tahunan' : req.type === 'Telat' ? 'Izin Telat' : req.type}</div>
             <div style={{ fontSize: 13, color: 'var(--muted-foreground)', marginTop: 4 }}>{req.date}</div>
             <div style={{ fontSize: 13, fontFamily: 'Outfit', fontWeight: 600, marginTop: 2 }}>{req.duration}</div>
             <div style={{ marginTop: 12 }}>
@@ -245,11 +256,13 @@ function DetailDrawer({
           )}
         </div>
       </div>
-    </div>
+    </ModalOverlay>
   )
 }
 
-export default function PermohonanPage() {
+export default function PermohonanPage({ categoryKey = 'permohonan/inbox' }: { categoryKey?: string }) {
+  const category: PermohonanCategory = categoryFromNav(categoryKey)
+  const categoryScoped = category !== 'inbox'
   const [data, setData] = useState(SEED)
   const [tab, setTab] = useState<InboxTab>('perlu')
   const [search, setSearch] = useState('')
@@ -259,19 +272,21 @@ export default function PermohonanPage() {
   const [monthFilter, setMonthFilter] = useState('Semua')
   const [selected, setSelected] = useState<HrRequest | null>(null)
 
-  const total = data.length
-  const perlu = data.filter(r => r.status === 'menunggu').length
-  const approved = data.filter(r => r.status === 'disetujui').length
-  const rejected = data.filter(r => r.status === 'ditolak' || r.status === 'dikembalikan').length
+  const scopedData = data.filter((r) => matchesHrRequestType(r.type, category))
 
-  const filtered = data.filter(r => {
+  const total = scopedData.length
+  const perlu = scopedData.filter(r => r.status === 'menunggu').length
+  const approved = scopedData.filter(r => r.status === 'disetujui').length
+  const rejected = scopedData.filter(r => r.status === 'ditolak' || r.status === 'dikembalikan').length
+
+  const filtered = scopedData.filter(r => {
     const q = search.toLowerCase()
     const matchSearch = !q || r.employee.toLowerCase().includes(q) || r.nik.toLowerCase().includes(q) || r.no.toLowerCase().includes(q)
     const matchTab =
       tab === 'semua' ||
       (tab === 'perlu' && r.status === 'menunggu') ||
       (tab === 'riwayat' && r.status !== 'menunggu')
-    const matchType = typeFilter === 'Semua' || r.type === typeFilter
+    const matchType = categoryScoped || typeFilter === 'Semua' || r.type === typeFilter
     const matchDept = deptFilter === 'Semua' || r.dept === deptFilter
     const matchStatus = statusFilter === 'Semua' || r.status === statusFilter.toLowerCase()
     const matchMonth = monthFilter === 'Semua' || r.month.startsWith(monthFilter)
@@ -315,8 +330,12 @@ export default function PermohonanPage() {
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
         <div>
-          <div style={{ fontFamily: 'Outfit', fontWeight: 800, fontSize: 18 }}>Permohonan</div>
-          <div style={{ fontSize: 13, color: 'var(--muted-foreground)', marginTop: 4 }}>Kelola dan proses pengajuan karyawan</div>
+          <div style={{ fontFamily: 'Outfit', fontWeight: 800, fontSize: 18 }}>{categoryLabel(category)}</div>
+          <div style={{ fontSize: 13, color: 'var(--muted-foreground)', marginTop: 4 }}>
+            {categoryScoped
+              ? `Kelola pengajuan ${categoryLabel(category).replace('Permohonan — ', '').toLowerCase()} dari karyawan`
+              : 'Kelola dan proses semua pengajuan karyawan'}
+          </div>
         </div>
         <button className="btn-ghost">Export</button>
       </div>
@@ -372,10 +391,12 @@ export default function PermohonanPage() {
 
       {/* Filters */}
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        {!categoryScoped && (
         <select value={typeFilter} onChange={e => setTypeFilter(e.target.value)} style={selectStyle}>
           <option value="Semua">Semua Jenis</option>
-          {['Cuti', 'Sakit', 'WFH', 'Izin', 'Dinas'].map(t => <option key={t} value={t}>{t}</option>)}
+          {['Cuti', 'Telat', 'Sakit', 'WFH', 'Izin', 'Dinas'].map(t => <option key={t} value={t}>{t === 'Telat' ? 'Izin Telat' : t === 'Sakit' ? 'Izin Sakit' : t}</option>)}
         </select>
+        )}
         <select value={deptFilter} onChange={e => setDeptFilter(e.target.value)} style={selectStyle}>
           <option value="Semua">Semua Departemen</option>
           {['Engineering', 'Marketing', 'HR', 'Legal', 'Design', 'Sales', 'Finance'].map(t => <option key={t} value={t}>{t}</option>)}

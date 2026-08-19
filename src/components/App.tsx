@@ -526,17 +526,52 @@ function Sidebar({ activeNav, setActiveNav, approvalCount, user, open, onClose }
 
 export default function App() {
   const [authUser, setAuthUser] = useState<AuthUser | null>(null)
+  const [impersonatingTenant, setImpersonatingTenant] = useState<{ slug: string; name: string } | null>(null)
   const [dark, setDark] = useState(false)
 
   useEffect(() => { document.documentElement.classList.toggle('dark', dark) }, [dark])
 
-  const handleLogin = (user: AuthUser) => setAuthUser(user)
-  const handleLogout = () => setAuthUser(null)
+  const handleLogin = (user: AuthUser) => {
+    setAuthUser(user)
+    setImpersonatingTenant(null)
+  }
+  const handleLogout = () => {
+    setAuthUser(null)
+    setImpersonatingTenant(null)
+  }
   const toggleDark = () => setDark(d => !d)
 
   if (!authUser) return <LoginPage onLogin={handleLogin} dark={dark} onToggleDark={toggleDark} />
   if (authUser.role === 'employee') return <EmployeePortal user={authUser} onLogout={handleLogout} dark={dark} onToggleDark={toggleDark} />
-  if (authUser.role === 'super_admin') return <ControlCenter user={authUser} onLogout={handleLogout} dark={dark} onToggleDark={toggleDark} />
+  
+  if (authUser.role === 'super_admin') {
+    if (impersonatingTenant) {
+      return (
+        <HRPortal
+          user={{
+            ...authUser,
+            company: impersonatingTenant.name,
+            name: `${authUser.name} (${impersonatingTenant.name})`,
+            role: 'admin',
+          }}
+          onLogout={handleLogout}
+          dark={dark}
+          onToggleDark={toggleDark}
+          impersonating={impersonatingTenant}
+          onExitImpersonate={() => setImpersonatingTenant(null)}
+        />
+      )
+    }
+    return (
+      <ControlCenter
+        user={authUser}
+        onLogout={handleLogout}
+        dark={dark}
+        onToggleDark={toggleDark}
+        onImpersonate={(slug, name) => setImpersonatingTenant({ slug, name })}
+      />
+    )
+  }
 
   // admin → HR Portal (below)
   return <HRPortal user={authUser} onLogout={handleLogout} dark={dark} onToggleDark={toggleDark} />
@@ -544,7 +579,21 @@ export default function App() {
 
 // ─── HR Portal ────────────────────────────────────────────────────────────────
 
-function HRPortal({ user, onLogout, dark, onToggleDark }: { user: AuthUser; onLogout: () => void; dark: boolean; onToggleDark: () => void }) {
+function HRPortal({
+  user,
+  onLogout,
+  dark,
+  onToggleDark,
+  impersonating,
+  onExitImpersonate,
+}: {
+  user: AuthUser
+  onLogout: () => void
+  dark: boolean
+  onToggleDark: () => void
+  impersonating?: { slug: string; name: string } | null
+  onExitImpersonate?: () => void
+}) {
   const [activeNav, setActiveNav] = useState('dashboard')
   const [approvalList, setApprovalList] = useState(approvalsSeed)
   const [toast, setToast] = useState<string | null>(null)
@@ -606,32 +655,75 @@ function HRPortal({ user, onLogout, dark, onToggleDark }: { user: AuthUser; onLo
   }
 
   return (
-    <div className="app-shell">
-      <Sidebar activeNav={activeNav} setActiveNav={setActiveNav} approvalCount={approvalList.length} user={user} open={mobileNavOpen} onClose={() => setMobileNavOpen(false)} />
-
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-        {/* Header */}
-        <header className="app-header" style={{ position: 'sticky', top: 0, zIndex: 30, background: 'var(--card)', borderBottom: '1px solid var(--border)', padding: '14px 24px' }}>
-          <button onClick={() => setMobileNavOpen(true)} className="mobile-menu-btn">☰</button>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontFamily: 'Outfit', fontWeight: 800, fontSize: 20, color: 'var(--foreground)' }}>{pageLabels[activeNav] ?? activeNav}</div>
-            <div style={{ fontSize: 12, color: 'var(--muted-foreground)', fontFamily: 'JetBrains Mono', marginTop: 1 }}>Selasa, 12 Agustus 2026</div>
+    <div className="app-shell" style={{ flexDirection: 'column' }}>
+      {/* Impersonate Banner */}
+      {impersonating && (
+        <div style={{
+          background: 'linear-gradient(90deg, #7c3aed, #4f46e5)',
+          color: '#ffffff',
+          padding: '10px 24px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          zIndex: 100,
+          boxShadow: '0 2px 10px rgba(0,0,0,0.15)',
+          fontSize: 13,
+          fontFamily: 'Outfit',
+          fontWeight: 600,
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span style={{ fontSize: 16 }}>⚡</span>
+            <span>
+              Mode Impersonasi: <strong>{impersonating.name}</strong> (<code style={{ fontFamily: 'JetBrains Mono', fontSize: 11, background: 'rgba(255,255,255,0.2)', padding: '2px 6px', borderRadius: 4 }}>/{impersonating.slug}</code>) — Anda melihat portal sebagai HR Admin tenant ini.
+            </span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-            <div className="header-search" style={{ background: 'var(--muted)', borderRadius: 10, padding: '8px 14px', alignItems: 'center', gap: 8 }}>
-              <span style={{ fontSize: 14 }}>🔍</span>
-              <input placeholder="Cari karyawan..." style={{ background: 'none', border: 'none', outline: 'none', fontSize: 13, color: 'var(--foreground)', width: 160, fontFamily: 'Inter' }} />
+          <button
+            onClick={onExitImpersonate}
+            style={{
+              background: '#ffffff',
+              color: '#6d28d9',
+              border: 'none',
+              padding: '6px 14px',
+              borderRadius: 8,
+              fontFamily: 'Outfit',
+              fontWeight: 700,
+              fontSize: 12,
+              cursor: 'pointer',
+              boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
+            }}
+          >
+            ✕ Keluar Impersonasi
+          </button>
+        </div>
+      )}
+
+      <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
+        <Sidebar activeNav={activeNav} setActiveNav={setActiveNav} approvalCount={approvalList.length} user={user} open={mobileNavOpen} onClose={() => setMobileNavOpen(false)} />
+
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+          {/* Header */}
+          <header className="app-header" style={{ position: 'sticky', top: 0, zIndex: 30, background: 'var(--card)', borderBottom: '1px solid var(--border)', padding: '14px 24px' }}>
+            <button onClick={() => setMobileNavOpen(true)} className="mobile-menu-btn">☰</button>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontFamily: 'Outfit', fontWeight: 800, fontSize: 20, color: 'var(--foreground)' }}>{pageLabels[activeNav] ?? activeNav}</div>
+              <div style={{ fontSize: 12, color: 'var(--muted-foreground)', fontFamily: 'JetBrains Mono', marginTop: 1 }}>Selasa, 12 Agustus 2026</div>
             </div>
-            <button onClick={onToggleDark} style={{ width: 38, height: 38, borderRadius: 10, background: 'var(--muted)', border: '1px solid var(--border)', cursor: 'pointer', fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{dark ? '☀️' : '🌙'}</button>
-            <button className="btn-primary">+ Check-in Manual</button>
-            <button onClick={onLogout} className="btn-ghost" style={{ fontSize: 13 }}>↩ Keluar</button>
-          </div>
-        </header>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+              <div className="header-search" style={{ background: 'var(--muted)', borderRadius: 10, padding: '8px 14px', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: 14 }}>🔍</span>
+                <input placeholder="Cari karyawan..." style={{ background: 'none', border: 'none', outline: 'none', fontSize: 13, color: 'var(--foreground)', width: 160, fontFamily: 'Inter' }} />
+              </div>
+              <button onClick={onToggleDark} style={{ width: 38, height: 38, borderRadius: 10, background: 'var(--muted)', border: '1px solid var(--border)', cursor: 'pointer', fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{dark ? '☀️' : '🌙'}</button>
+              <button className="btn-primary">+ Check-in Manual</button>
+              <button onClick={onLogout} className="btn-ghost" style={{ fontSize: 13 }}>↩ Keluar</button>
+            </div>
+          </header>
 
-        {/* Content */}
-        <main style={{ padding: '28px 24px', flex: 1, minWidth: 0 }}>
-          {renderPage()}
-        </main>
+          {/* Content */}
+          <main style={{ padding: '28px 24px', flex: 1, minWidth: 0 }}>
+            {renderPage()}
+          </main>
+        </div>
       </div>
 
       {toast && <Toast message={toast} onClose={() => setToast(null)} />}
@@ -639,3 +731,4 @@ function HRPortal({ user, onLogout, dark, onToggleDark }: { user: AuthUser; onLo
     </div>
   )
 }
+

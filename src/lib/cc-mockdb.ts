@@ -49,7 +49,7 @@ export const tenantsDb: Tenant[] = [
   {
     id: 5, name: 'PayrollIn Demo', slug: 'default',
     employees: 10, plan: 'Pro', status: 'trial', mrr: 0,
-    features: ['attendance', 'leave', 'overtime', 'wfh', 'chat'],
+    features: ['attendance', 'leave', 'overtime', 'wfh', 'chat', 'payroll'],
     adminEmail: 'demo@payrollin.id', adminName: 'Demo Admin',
     createdAt: '2026-08-01', lastActive: '2026-08-18',
     storageUsedMb: 80, storageQuotaMb: 5120,

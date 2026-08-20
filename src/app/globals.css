@@ -472,3 +472,34 @@ h1, h2, h3, h4, h5, h6 {
   font-size: 10px !important;
   max-width: 70%;
 }
+
+/* ─── Print Media Styles for Payslip ────────────────────────────────────────── */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #printable-payslip,
+  #printable-payslip * {
+    visibility: visible;
+  }
+  #printable-payslip {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+  .no-print,
+  .app-sidebar,
+  .app-header,
+  .modal-overlay,
+  button {
+    display: none !important;
+  }
+}

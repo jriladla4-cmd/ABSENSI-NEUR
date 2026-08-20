@@ -16,6 +16,7 @@ import PengumumanPage from './pages/PengumumanPage'
 import LoginPage, { type AuthUser } from './pages/LoginPage'
 import EmployeePortal from './pages/EmployeePortal'
 import ControlCenter from './pages/ControlCenter'
+import PayrollPage from './pages/PayrollPage'
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
 
@@ -94,7 +95,7 @@ const NAV = [
       { id: 'pengaturan/libur', label: 'Hari Libur' },
     ],
   },
-  { id: 'payroll', label: 'Payroll', icon: '💰', soon: true },
+  { id: 'payroll', label: 'Payroll', icon: '💰' },
 ] as const
 
 // ─── Micro components ─────────────────────────────────────────────────────────
@@ -452,7 +453,7 @@ function Sidebar({ activeNav, setActiveNav, approvalCount, user, open, onClose }
       <nav style={{ display: 'flex', flexDirection: 'column', gap: 2, flex: 1, overflowY: 'auto' }}>
         {NAV.map(item => {
           const hasSub = 'sub' in item && item.sub
-          const isSoon = 'soon' in item && item.soon
+          const isSoon = Boolean((item as any).soon)
           const isRootActive = activeRoot === item.id
           const isExpanded = expanded.includes(item.id)
 
@@ -650,7 +651,7 @@ function HRPortal({
     if (activeNav === 'pengumuman') return <PengumumanPage />
     if (activeNav === 'notifikasi') return <PlaceholderPage icon="🔔" title="Notifikasi" desc="Inbox notifikasi sistem HR." />
     if (activeRoot === 'pengaturan') return <PengaturanPage />
-    if (activeNav === 'payroll') return <PlaceholderPage icon="💰" title="Payroll" desc="Modul penggajian, slip gaji, THR, dan BPJS. Segera hadir." soon />
+    if (activeNav === 'payroll') return <PayrollPage />
     return null
   }
 

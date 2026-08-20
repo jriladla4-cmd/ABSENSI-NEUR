@@ -1,8 +1,6 @@
-# figma-make-app
+# ABSENSI-NEUR
 
 React + Next.js + Tailwind CSS project.
-
-## Development Server
 
 A Next.js development server is **already running** on `$PORT` (default 8443). You don't need to start it manually.
 

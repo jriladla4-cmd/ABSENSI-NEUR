@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import BrandMark from '@/components/BrandMark'
 
 export type UserRole = 'employee' | 'admin' | 'super_admin'
 export interface AuthUser { name: string; email: string; role: UserRole; avatar: string; company: string }
@@ -17,77 +18,45 @@ const ROLE_META: Record<UserRole, { label: string; color: string; bg: string; bo
   employee:    { label: 'EMPLOYEE',    color: '#059669', bg: '#ecfdf5', border: '#a7f3d0', route: '/app'            },
 }
 
-// Floating illustration elements
-function Illustration() {
+/**
+ * Hero art with a real alpha-transparent background (chroma-keyed) — floats
+ * directly over the page, no card / no box / no solid edge behind it.
+ */
+function Illustration({ dark }: { dark: boolean }) {
   return (
-    <div style={{ position: 'relative', width: '100%', maxWidth: 480, height: 340, margin: '0 auto' }}>
-      {/* Ground ellipse */}
-      <div style={{ position: 'absolute', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: 420, height: 180, borderRadius: '50%', background: 'rgba(191,219,254,.45)', zIndex: 0 }} />
-
-      {/* Person at laptop — center */}
-      <div style={{ position: 'absolute', bottom: 24, left: '50%', transform: 'translateX(-50%)', zIndex: 3, textAlign: 'center', animation: 'f-person 4s ease-in-out infinite' }}>
-        <div style={{ fontSize: 72, lineHeight: 1 }}>👩‍💻</div>
+    <div className="ill-scene" style={{ position: 'relative', width: '100%', maxWidth: 520, margin: '0 auto 0 -12px' }}>
+      {dark && (
+        <div
+          aria-hidden
+          style={{
+            position: 'absolute',
+            left: '10%',
+            right: '10%',
+            top: '8%',
+            bottom: '10%',
+            borderRadius: '50%',
+            background: 'radial-gradient(ellipse at center, rgba(96,165,250,0.16), transparent 70%)',
+            filter: 'blur(6px)',
+            pointerEvents: 'none',
+          }}
+        />
+      )}
+      <div className="ill-float-slow" style={{ position: 'relative' }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/illustrations/hr-login-hero.png"
+          alt="Ilustrasi absensi, payroll, dan manajemen HR HadiR"
+          draggable={false}
+          style={{
+            display: 'block',
+            width: '100%',
+            height: 'auto',
+            userSelect: 'none',
+            pointerEvents: 'none',
+            filter: dark ? 'brightness(1.08) drop-shadow(0 18px 32px rgba(0,0,0,0.35))' : 'drop-shadow(0 18px 32px rgba(30,64,175,0.12))',
+          }}
+        />
       </div>
-
-      {/* Calendar — left */}
-      <div style={{ position: 'absolute', bottom: 100, left: 30, zIndex: 2, animation: 'f-a 5s ease-in-out infinite' }}>
-        <div style={{ background: '#fff', borderRadius: 14, padding: '10px 14px', boxShadow: '0 4px 20px rgba(0,0,0,.1)', border: '1px solid #e2e8f0', minWidth: 90 }}>
-          <div style={{ background: '#f97316', borderRadius: 6, padding: '3px 8px', fontSize: 9, color: '#fff', fontFamily: 'Outfit', fontWeight: 700, marginBottom: 6, textAlign: 'center' }}>JADWAL</div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 2 }}>
-            {['S','S','R','K','J','S','M'].map((d,i) => (
-              <div key={i} style={{ width: 16, height: 16, borderRadius: 4, background: i===3?'#2563eb':'#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 7, color: i===3?'#fff':'#64748b', fontFamily: 'Inter', fontWeight: 600 }}>{d}</div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Payslip — top center-left */}
-      <div style={{ position: 'absolute', top: 10, left: '35%', zIndex: 2, animation: 'f-b 6s ease-in-out infinite .5s' }}>
-        <div style={{ background: '#fff', borderRadius: 12, padding: '10px 14px', boxShadow: '0 4px 20px rgba(0,0,0,.1)', border: '1px solid #e2e8f0', width: 100 }}>
-          <div style={{ fontSize: 9, fontFamily: 'Outfit', fontWeight: 800, color: '#1e40af', marginBottom: 6, textAlign: 'center', letterSpacing: '.06em' }}>SLIP GAJI</div>
-          <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#fef3c7', border: '2px solid #fde68a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, margin: '0 auto 6px' }}>💰</div>
-          <div style={{ height: 4, borderRadius: 2, background: '#e2e8f0', marginBottom: 3 }} />
-          <div style={{ height: 4, borderRadius: 2, background: '#e2e8f0', width: '70%' }} />
-        </div>
-      </div>
-
-      {/* Clock — top right */}
-      <div style={{ position: 'absolute', top: 20, right: 60, zIndex: 2, animation: 'f-c 4.5s ease-in-out infinite 1s' }}>
-        <div style={{ background: '#fff', borderRadius: '50%', width: 60, height: 60, boxShadow: '0 4px 20px rgba(0,0,0,.12)', border: '2px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28 }}>🕗</div>
-      </div>
-
-      {/* Coins — bottom right */}
-      <div style={{ position: 'absolute', bottom: 60, right: 50, zIndex: 2, animation: 'f-a 5.5s ease-in-out infinite .8s' }}>
-        <div style={{ background: '#fff', borderRadius: 14, padding: '10px 12px', boxShadow: '0 4px 20px rgba(0,0,0,.1)', border: '1px solid #e2e8f0', textAlign: 'center' }}>
-          <div style={{ fontSize: 26 }}>🪙</div>
-          <div style={{ fontSize: 11, fontFamily: 'Outfit', fontWeight: 800, color: '#d97706', marginTop: 2 }}>+Rp450k</div>
-        </div>
-      </div>
-
-      {/* Chart — right */}
-      <div style={{ position: 'absolute', bottom: 130, right: 20, zIndex: 2, animation: 'f-b 7s ease-in-out infinite .3s' }}>
-        <div style={{ background: '#fff', borderRadius: 14, padding: '10px 14px', boxShadow: '0 4px 20px rgba(0,0,0,.1)', border: '1px solid #e2e8f0' }}>
-          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 3, height: 32 }}>
-            {[40,65,45,80,60,95].map((h,i) => (
-              <div key={i} style={{ width: 8, borderRadius: '3px 3px 0 0', background: i===5?'#2563eb':'#bfdbfe', height: `${h}%` }} />
-            ))}
-          </div>
-          <div style={{ fontSize: 9, color: '#2563eb', fontFamily: 'Outfit', fontWeight: 700, marginTop: 4, display: 'flex', alignItems: 'center', gap: 3 }}>
-            <span>↗</span> 98% hadir
-          </div>
-        </div>
-      </div>
-
-      {/* Plants left */}
-      <div style={{ position: 'absolute', bottom: 0, left: 10, fontSize: 36, zIndex: 1, animation: 'f-sway 4s ease-in-out infinite' }}>🌿</div>
-      <div style={{ position: 'absolute', bottom: 10, left: 0, fontSize: 24, zIndex: 1, animation: 'f-sway 5s ease-in-out infinite .5s' }}>🍃</div>
-
-      {/* Cloud */}
-      <div style={{ position: 'absolute', top: 30, left: 60, fontSize: 28, opacity: .7, animation: 'f-c 8s ease-in-out infinite' }}>☁️</div>
-
-      {/* Sparkles */}
-      <div style={{ position: 'absolute', top: 60, left: '30%', fontSize: 14, animation: 'f-spark 2s ease-in-out infinite' }}>✨</div>
-      <div style={{ position: 'absolute', bottom: 140, left: '25%', fontSize: 10, animation: 'f-spark 2.5s ease-in-out infinite .8s' }}>⭐</div>
     </div>
   )
 }
@@ -124,7 +93,6 @@ export default function LoginPage({ onLogin, dark, onToggleDark }: { onLogin: (u
   const demoSubC  = D ? '#64748b'  : '#94a3b8'
   const dividerC  = D ? 'rgba(255,255,255,.08)' : '#e2e8f0'
   const dividerTC = D ? '#64748b'  : '#94a3b8'
-  const footerC   = D ? '#475569'  : '#94a3b8'
   const logoC     = D ? '#818cf8'  : '#2563eb'
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -143,15 +111,19 @@ export default function LoginPage({ onLogin, dark, onToggleDark }: { onLogin: (u
   return (
     <div style={{ minHeight: '100vh', background: bg, transition: 'background .3s', position: 'relative', overflow: 'hidden', fontFamily: 'Inter, sans-serif' }}>
       <style>{`
-        @keyframes f-a      { 0%,100%{transform:translateY(0) rotate(-1deg)} 50%{transform:translateY(-14px) rotate(1.5deg)} }
-        @keyframes f-b      { 0%,100%{transform:translateY(0) rotate(1deg)}  50%{transform:translateY(-18px) rotate(-1deg)} }
-        @keyframes f-c      { 0%,100%{transform:translateY(0)}               50%{transform:translateY(-10px)} }
-        @keyframes f-person { 0%,100%{transform:translateX(-50%) translateY(0)} 50%{transform:translateX(-50%) translateY(-6px)} }
-        @keyframes f-sway   { 0%,100%{transform:rotate(-3deg) translateY(0)} 50%{transform:rotate(3deg) translateY(-4px)} }
-        @keyframes f-spark  { 0%,100%{opacity:.3;transform:scale(.8)} 50%{opacity:1;transform:scale(1.2)} }
+        @keyframes ill-a { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+        @keyframes ill-b { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-14px)} }
+        @keyframes ill-c { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+        @keyframes ill-spark { 0%,100%{opacity:.45} 50%{opacity:1} }
         @keyframes fade-up  { from{opacity:0;transform:translateY(18px)} to{opacity:1;transform:translateY(0)} }
         @keyframes spin     { to{transform:rotate(360deg)} }
         @keyframes card-in  { from{opacity:0;transform:translateY(24px) scale(.97)} to{opacity:1;transform:translateY(0) scale(1)} }
+
+        .ill-float-a { animation: ill-a 5s ease-in-out infinite; }
+        .ill-float-b { animation: ill-b 6s ease-in-out infinite .4s; }
+        .ill-float-c { animation: ill-c 4.5s ease-in-out infinite .8s; }
+        .ill-float-slow { animation: ill-c 7s ease-in-out infinite; }
+        .ill-spark { animation: ill-spark 2.4s ease-in-out infinite; }
 
         .l-input { transition:border-color .2s,box-shadow .2s,background .2s; }
         .l-input:focus { outline:none; border-color:#2563eb!important; box-shadow:0 0 0 3px rgba(37,99,235,.15); }
@@ -195,7 +167,7 @@ export default function LoginPage({ onLogin, dark, onToggleDark }: { onLogin: (u
         <div className="ill-wrap" style={{ opacity:ready?1:0, animation:ready?'fade-up .6s ease both':undefined }}>
           {/* Logo */}
           <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:36 }}>
-            <div style={{ width:40, height:40, borderRadius:12, background: D?'rgba(129,140,248,.2)':'rgba(37,99,235,.1)', border:`2px solid ${D?'rgba(129,140,248,.4)':'rgba(37,99,235,.25)'}`, display:'flex', alignItems:'center', justifyContent:'center', fontFamily:'Outfit', fontWeight:900, fontSize:20, color:logoC }}>H</div>
+            <BrandMark size={42} />
             <span style={{ fontFamily:'Outfit', fontWeight:900, fontSize:24, color:logoC, letterSpacing:'-0.5px' }}>HadiR</span>
           </div>
 
@@ -208,7 +180,7 @@ export default function LoginPage({ onLogin, dark, onToggleDark }: { onLogin: (u
           </p>
 
           {/* Illustration */}
-          <Illustration />
+          <Illustration dark={D} />
         </div>
 
         {/* ── RIGHT: Card ── */}
@@ -289,11 +261,6 @@ export default function LoginPage({ onLogin, dark, onToggleDark }: { onLogin: (u
                 })}
               </div>
             </div>
-
-            <p style={{ textAlign:'center', marginTop:22, fontSize:13, color:footerC, fontFamily:'Inter', transition:'color .3s' }}>
-              Belum punya akun?{' '}
-              <span style={{ color:forgotC, fontWeight:600, cursor:'pointer' }}>Daftar Sekarang</span>
-            </p>
           </div>
         </div>
       </div>

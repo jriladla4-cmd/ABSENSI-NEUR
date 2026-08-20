@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, type CSSProperties } from 'react'
+import ModalOverlay from '@/components/ModalOverlay'
 
 function Avatar({ initials, color, size = 36 }: { initials: string; color: string; size?: number }) {
   return (
@@ -71,8 +72,8 @@ function Employee360Modal({ emp, onClose }: { emp: typeof allEmployees[0]; onClo
   const total = att.hadir + att.telat + att.sakit + att.izin + att.alfa || 1
 
   return (
-    <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-      <div onClick={e => e.stopPropagation()} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 18, width: '100%', maxWidth: 560, maxHeight: '90vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 24px 60px rgba(0,0,0,0.25)' }}>
+    <ModalOverlay onClose={onClose}>
+      <div onClick={e => e.stopPropagation()} className="modal-panel" style={{ width: '100%', maxWidth: 560, maxHeight: '90vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
         {/* Header */}
         <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
           <Avatar initials={emp.avatar} color={emp.color} size={48} />
@@ -227,7 +228,7 @@ function Employee360Modal({ emp, onClose }: { emp: typeof allEmployees[0]; onClo
           )}
         </div>
       </div>
-    </div>
+    </ModalOverlay>
   )
 }
 
@@ -296,8 +297,8 @@ function DataKaryawanTab() {
       )}
       {/* Add Employee Modal */}
       {showModal && !selectedEmp && (
-        <div onClick={() => setShowModal(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div onClick={e => e.stopPropagation()} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 16, padding: '28px', width: 440, maxWidth: '95vw', boxShadow: '0 24px 80px rgba(0,0,0,0.2)' }}>
+        <ModalOverlay onClose={() => setShowModal(false)}>
+          <div onClick={e => e.stopPropagation()} className="modal-panel" style={{ padding: '28px', width: 440, maxWidth: '95vw' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 22 }}>
               <div style={{ fontFamily: 'Outfit', fontWeight: 800, fontSize: 18, color: 'var(--foreground)' }}>Tambah Karyawan</div>
               <button onClick={() => setShowModal(false)} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: 'var(--muted-foreground)' }}>×</button>
@@ -317,7 +318,7 @@ function DataKaryawanTab() {
               <button className="btn-primary" style={{ marginTop: 6 }} onClick={() => setShowModal(false)}>+ Tambah Karyawan</button>
             </div>
           </div>
-        </div>
+        </ModalOverlay>
       )}
     </div>
   )

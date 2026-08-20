@@ -1,10 +1,17 @@
 'use client'
 
-import { useState, type CSSProperties } from 'react'
+import { useMemo, useState, type CSSProperties } from 'react'
+import dynamic from 'next/dynamic'
+import ModalOverlay from '@/components/ModalOverlay'
 import {
   AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip,
   ResponsiveContainer, CartesianGrid,
 } from 'recharts'
+import { useOffices } from '@/hooks/useOffices'
+import { distanceMeters } from '@/lib/geo'
+import type { MapMarker } from '@/components/GeoMap'
+
+const GeoMap = dynamic(() => import('@/components/GeoMap'), { ssr: false })
 
 function CustomTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null
@@ -224,8 +231,8 @@ function AttendanceDetailModal({ record, onClose }: { record: RiwayatRecord; onC
   const sc = statusColors[record.status] ?? statusColors.hadir
 
   return (
-    <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-      <div onClick={e => e.stopPropagation()} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 18, width: '100%', maxWidth: 460, boxShadow: '0 24px 60px rgba(0,0,0,0.25)', overflow: 'hidden' }}>
+    <ModalOverlay onClose={onClose}>
+      <div onClick={e => e.stopPropagation()} className="modal-panel" style={{ width: '100%', maxWidth: 460, overflow: 'hidden' }}>
         {/* Header */}
         <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 14 }}>
           <Avatar initials={initials} color={color} size={42} />
@@ -314,7 +321,7 @@ function AttendanceDetailModal({ record, onClose }: { record: RiwayatRecord; onC
           )}
         </div>
       </div>
-    </div>
+    </ModalOverlay>
   )
 }
 
@@ -399,21 +406,63 @@ function RiwayatTab() {
 // ─── GPS Monitor ─────────────────────────────────────────────────────────────
 
 const onlineEmployees = [
-  { name: 'Rina Setiawati', dept: 'Engineering', lat: -6.2088, lng: 106.8456, dist: 12, status: 'hadir', avatar: 'RS', color: '#2563eb' },
-  { name: 'Dita Permata', dept: 'Finance', lat: -6.2095, lng: 106.8460, dist: 8, status: 'hadir', avatar: 'DP', color: '#0d9488' },
-  { name: 'Budi Santoso', dept: 'Marketing', lat: -6.2102, lng: 106.8448, dist: 340, status: 'telat', avatar: 'BS', color: '#7c3aed' },
-  { name: 'Lana Kusuma', dept: 'Design', lat: -6.2080, lng: 106.8462, dist: 25, status: 'hadir', avatar: 'LK', color: '#ec4899' },
+  { name: 'Rina Setiawati', dept: 'Engineering', latOffset: 0.00002, lngOffset: 0.00002, status: 'hadir', avatar: 'RS', color: '#2563eb' },
+  { name: 'Dita Permata', dept: 'Finance', latOffset: -0.00005, lngOffset: 0.00007, status: 'hadir', avatar: 'DP', color: '#0d9488' },
+  { name: 'Budi Santoso', dept: 'Marketing', latOffset: 0.0027, lngOffset: 0.0023, status: 'telat', avatar: 'BS', color: '#7c3aed' },
+  { name: 'Lana Kusuma', dept: 'Design', latOffset: -0.00013, lngOffset: -0.00013, status: 'hadir', avatar: 'LK', color: '#ec4899' },
 ]
 
 function GpsTab() {
   const [selected, setSelected] = useState<string | null>(null)
+  const { primary: office, activeOffices } = useOffices()
+
+  const employees = useMemo(
+    () =>
+      onlineEmployees.map((emp) => {
+        const lat = office.lat + emp.latOffset
+        const lng = office.lng + emp.lngOffset
+        const dist = Math.round(distanceMeters(lat, lng, office.lat, office.lng))
+        return { ...emp, lat, lng, dist }
+      }),
+    [office.lat, office.lng],
+  )
+
+  const markers: MapMarker[] = useMemo(
+    () =>
+      employees.map((emp) => ({
+        id: emp.name,
+        lat: emp.lat,
+        lng: emp.lng,
+        label: emp.name.split(' ')[0],
+        color: emp.dist > office.radiusM ? '#ef4444' : '#10b981',
+        selected: selected === emp.name,
+      })),
+    [employees, selected, office.radiusM],
+  )
+
+  const selectedEmp = employees.find((e) => e.name === selected)
+
+  const sites = useMemo(
+    () =>
+      activeOffices.map((o) => ({
+        id: o.id,
+        lat: o.lat,
+        lng: o.lng,
+        name: o.name,
+        radiusM: o.radiusM,
+        highlight: o.id === office.id,
+      })),
+    [activeOffices, office.id],
+  )
 
   return (
     <div className="grid-side-left" style={{ '--side': '320px', '--gap': '18px', height: 'auto' } as CSSProperties}>
-      {/* Employee list */}
       <div className="card" style={{ padding: '18px 16px', maxHeight: 520, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <div style={{ fontFamily: 'Outfit', fontWeight: 700, fontSize: 14, color: 'var(--foreground)', marginBottom: 6 }}>Karyawan Online ({onlineEmployees.length})</div>
-        {onlineEmployees.map(emp => (
+        <div style={{ fontFamily: 'Outfit', fontWeight: 700, fontSize: 14, color: 'var(--foreground)', marginBottom: 6 }}>Karyawan Online ({employees.length})</div>
+        <div style={{ fontSize: 11, color: 'var(--muted-foreground)', marginBottom: 4 }}>
+          Geofence: {office.name} · {office.radiusM}m
+        </div>
+        {employees.map(emp => (
           <div key={emp.name} onClick={() => setSelected(emp.name === selected ? null : emp.name)} style={{ padding: '12px 12px', borderRadius: 10, cursor: 'pointer', border: `1px solid ${selected === emp.name ? 'var(--primary)' : 'var(--border)'}`, background: selected === emp.name ? 'rgba(37,99,235,0.06)' : 'transparent', transition: 'all 0.15s' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <div style={{ position: 'relative' }}>
@@ -425,7 +474,7 @@ function GpsTab() {
                 <div style={{ fontSize: 11, color: 'var(--muted-foreground)' }}>{emp.dept}</div>
               </div>
               <div style={{ textAlign: 'right' }}>
-                <div className="mono" style={{ fontSize: 11, color: emp.dist > 200 ? '#ef4444' : '#10b981', fontWeight: 600 }}>{emp.dist}m</div>
+                <div className="mono" style={{ fontSize: 11, color: emp.dist > office.radiusM ? '#ef4444' : '#10b981', fontWeight: 600 }}>{emp.dist}m</div>
                 <div style={{ fontSize: 10, color: 'var(--muted-foreground)' }}>dari kantor</div>
               </div>
             </div>
@@ -439,32 +488,22 @@ function GpsTab() {
         ))}
       </div>
 
-      {/* Mock map */}
-      <div className="card gps-map-cell" style={{ overflow: 'hidden', position: 'relative', background: 'var(--muted)', minHeight: 400 }}>
-        {/* Grid bg */}
-        <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
-
-        {/* Office marker */}
-        <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }}>
-          <div style={{ width: 180, height: 180, borderRadius: '50%', border: '2px dashed rgba(37,99,235,0.3)', background: 'rgba(37,99,235,0.05)', position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }} />
-          <div style={{ width: 14, height: 14, borderRadius: '50%', background: '#2563eb', border: '3px solid #fff', boxShadow: '0 2px 8px rgba(37,99,235,0.5)', position: 'relative', zIndex: 2 }} />
-          <div style={{ position: 'absolute', top: 18, left: '50%', transform: 'translateX(-50%)', fontFamily: 'Outfit', fontWeight: 700, fontSize: 11, color: 'var(--primary)', whiteSpace: 'nowrap', background: 'var(--card)', padding: '2px 8px', borderRadius: 6 }}>Kantor Pusat</div>
-        </div>
-
-        {/* Employee dots */}
-        {onlineEmployees.map((emp, i) => {
-          const offsets = [[-60, -50], [70, -30], [-80, 70], [50, 60]]
-          const [dx, dy] = offsets[i] ?? [0, 0]
-          return (
-            <div key={emp.name} style={{ position: 'absolute', top: `calc(50% + ${dy}px)`, left: `calc(50% + ${dx}px)`, transform: 'translate(-50%, -50%)', zIndex: 3 }}>
-              <div style={{ width: 10, height: 10, borderRadius: '50%', background: emp.dist > 200 ? '#ef4444' : '#10b981', border: '2px solid #fff', boxShadow: `0 2px 6px ${emp.dist > 200 ? 'rgba(239,68,68,0.5)' : 'rgba(16,185,129,0.5)'}` }} />
-              <div style={{ position: 'absolute', top: 13, left: '50%', transform: 'translateX(-50%)', fontFamily: 'Outfit', fontSize: 10, fontWeight: 600, color: 'var(--foreground)', background: 'var(--card)', padding: '1px 6px', borderRadius: 4, border: '1px solid var(--border)', whiteSpace: 'nowrap' }}>{emp.name.split(' ')[0]}</div>
-            </div>
-          )
-        })}
-
-        {/* Legend */}
-        <div style={{ position: 'absolute', bottom: 16, left: 16, background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 10, padding: '10px 14px', display: 'flex', gap: 14, fontSize: 11 }}>
+      <div className="card gps-map-cell" style={{ overflow: 'hidden', position: 'relative', padding: 0, minHeight: 400 }}>
+        <GeoMap
+          height={400}
+          showOffice
+          showGeofence
+          sites={sites}
+          officeLat={office.lat}
+          officeLng={office.lng}
+          officeName={office.name}
+          radiusM={office.radiusM}
+          markers={markers}
+          focusLat={selectedEmp?.lat ?? office.lat}
+          focusLng={selectedEmp?.lng ?? office.lng}
+          zoom={15}
+        />
+        <div style={{ position: 'absolute', bottom: 16, left: 16, zIndex: 500, background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 10, padding: '10px 14px', display: 'flex', gap: 14, fontSize: 11, boxShadow: '0 4px 16px rgba(0,0,0,0.08)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 5, color: 'var(--muted-foreground)', fontFamily: 'Outfit' }}>
             <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#10b981' }} /> Dalam radius
           </div>
@@ -472,7 +511,7 @@ function GpsTab() {
             <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#ef4444' }} /> Di luar radius
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 5, color: 'var(--muted-foreground)', fontFamily: 'Outfit' }}>
-            <div style={{ width: 14, height: 14, borderRadius: '50%', border: '1.5px dashed rgba(37,99,235,0.4)' }} /> Radius kantor (200m)
+            <div style={{ width: 14, height: 14, borderRadius: '50%', border: '1.5px dashed rgba(37,99,235,0.4)' }} /> Radius {office.radiusM}m
           </div>
         </div>
       </div>

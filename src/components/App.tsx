@@ -5,11 +5,14 @@ import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   CartesianGrid, AreaChart, Area,
 } from 'recharts'
+import BrandMark from '@/components/BrandMark'
 import AbsensiPage from './pages/AbsensiPage'
 import KaryawanPage from './pages/KaryawanPage'
 import LaporanPage from './pages/LaporanPage'
 import PengaturanPage from './pages/PengaturanPage'
 import PermohonanPage from './pages/PermohonanPage'
+import { PERMOHONAN_PAGE_LABELS, PERMOHONAN_SUBMENU } from '@/lib/permohonanTypes'
+import PengumumanPage from './pages/PengumumanPage'
 import LoginPage, { type AuthUser } from './pages/LoginPage'
 import EmployeePortal from './pages/EmployeePortal'
 import ControlCenter from './pages/ControlCenter'
@@ -67,6 +70,7 @@ const NAV = [
   },
   {
     id: 'permohonan', label: 'Permohonan', icon: '📋',
+    sub: PERMOHONAN_SUBMENU.map((s) => ({ id: s.id, label: s.label })),
   },
   {
     id: 'karyawan', label: 'Karyawan', icon: '⊙',
@@ -79,7 +83,6 @@ const NAV = [
   },
   { id: 'laporan', label: 'Laporan', icon: '≡' },
   { id: 'pengumuman', label: 'Pengumuman', icon: '📢' },
-  { id: 'chat', label: 'Chat', icon: '💬' },
   { id: 'notifikasi', label: 'Notifikasi', icon: '🔔' },
   {
     id: 'pengaturan', label: 'Pengaturan', icon: '⚙',
@@ -226,9 +229,9 @@ function DashboardPage({ approvalList, onApprove, onReject, loading, filterStatu
 
   const alerts = [
     { icon: '⏰', color: '#f59e0b', bg: 'rgba(245,158,11,.08)', border: 'rgba(245,158,11,.2)', text: '8 karyawan terlambat hari ini', action: 'Lihat Absensi', nav: 'absensi' },
-    { icon: '📋', color: '#3b82f6', bg: 'rgba(59,130,246,.08)', border: 'rgba(59,130,246,.2)', text: `${approvalList.length} permohonan menunggu approval`, action: 'Tinjau', nav: 'permohonan' },
+    { icon: '📋', color: '#3b82f6', bg: 'rgba(59,130,246,.08)', border: 'rgba(59,130,246,.2)', text: `${approvalList.length} permohonan menunggu approval`, action: 'Tinjau', nav: 'permohonan/inbox' },
     { icon: '🚪', color: '#ef4444', bg: 'rgba(239,68,68,.08)', border: 'rgba(239,68,68,.2)', text: '2 karyawan belum check-out (17:00+)', action: 'Lihat', nav: 'absensi' },
-    { icon: '🩺', color: '#8b5cf6', bg: 'rgba(139,92,246,.08)', border: 'rgba(139,92,246,.2)', text: '1 pengajuan sakit membutuhkan bukti lampiran', action: 'Tinjau', nav: 'permohonan' },
+    { icon: '🩺', color: '#8b5cf6', bg: 'rgba(139,92,246,.08)', border: 'rgba(139,92,246,.2)', text: '1 pengajuan sakit membutuhkan bukti lampiran', action: 'Tinjau', nav: 'permohonan/sakit' },
   ]
 
   return (
@@ -434,7 +437,9 @@ function Sidebar({ activeNav, setActiveNav, approvalCount, user, open, onClose }
     <aside className={`app-sidebar ${open ? 'open' : ''}`} style={{ width: 220 }}>
       {/* Logo */}
       <div style={{ padding: '0 6px 24px', display: 'flex', alignItems: 'center', gap: 10 }}>
-        <div style={{ width: 34, height: 34, borderRadius: 10, background: 'linear-gradient(135deg, #2563eb, #7c3aed)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, color: '#fff', fontWeight: 800, fontFamily: 'Outfit', flexShrink: 0 }}>H</div>
+        <div style={{ flexShrink: 0 }}>
+          <BrandMark size={34} />
+        </div>
         <div style={{ flex: 1 }}>
           <div style={{ fontFamily: 'Outfit', fontWeight: 800, fontSize: 15, color: 'var(--foreground)' }}>HadiR</div>
           <div style={{ fontSize: 10, color: 'var(--muted-foreground)', fontFamily: 'JetBrains Mono' }}>HR Platform</div>
@@ -616,16 +621,13 @@ function HRPortal({
     'absensi/ringkasan': 'Absensi — Ringkasan',
     'absensi/riwayat': 'Absensi — Riwayat',
     'absensi/gps': 'Absensi — Monitor GPS',
-    'permohonan/izin': 'Permohonan — Izin',
-    'permohonan/lembur': 'Permohonan — Lembur',
-    'permohonan/reimburse': 'Permohonan — Reimburse',
+    ...PERMOHONAN_PAGE_LABELS,
     'karyawan/data': 'Karyawan — Data',
     'karyawan/organisasi': 'Karyawan — Organisasi',
     'karyawan/status': 'Karyawan — Status',
     'karyawan/dokumen': 'Karyawan — Dokumen & Kontrak',
     laporan: 'Laporan & Analitik',
     pengumuman: 'Pengumuman',
-    chat: 'Chat Internal',
     notifikasi: 'Notifikasi',
     'pengaturan/role': 'Pengaturan — Role Management',
     'pengaturan/permission': 'Pengaturan — Permission',
@@ -642,11 +644,10 @@ function HRPortal({
       return <DashboardPage approvalList={approvalList} onApprove={handleApprove} onReject={handleReject} loading={loading} filterStatus={filterStatus} setFilterStatus={setFilterStatus} />
     }
     if (activeRoot === 'absensi') return <AbsensiPage />
-    if (activeRoot === 'permohonan') return <PermohonanPage />
+    if (activeRoot === 'permohonan') return <PermohonanPage categoryKey={activeNav} />
     if (activeRoot === 'karyawan') return <KaryawanPage />
     if (activeNav === 'laporan') return <LaporanPage />
-    if (activeNav === 'pengumuman') return <PlaceholderPage icon="📢" title="Pengumuman" desc="Buat dan kelola pengumuman perusahaan — draft, publish, arsip." />
-    if (activeNav === 'chat') return <PlaceholderPage icon="💬" title="Chat Internal" desc="Ruang chat perusahaan untuk seluruh karyawan." />
+    if (activeNav === 'pengumuman') return <PengumumanPage />
     if (activeNav === 'notifikasi') return <PlaceholderPage icon="🔔" title="Notifikasi" desc="Inbox notifikasi sistem HR." />
     if (activeRoot === 'pengaturan') return <PengaturanPage />
     if (activeNav === 'payroll') return <PlaceholderPage icon="💰" title="Payroll" desc="Modul penggajian, slip gaji, THR, dan BPJS. Segera hadir." soon />

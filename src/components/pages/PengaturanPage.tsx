@@ -1,48 +1,334 @@
 'use client'
 
 import { useState, type CSSProperties } from 'react'
+import dynamic from 'next/dynamic'
+import { useOffices } from '@/hooks/useOffices'
+import type { OfficeLocation } from '@/lib/officeStore'
+
+const GeoMap = dynamic(() => import('@/components/GeoMap'), { ssr: false })
 
 // ─── Lokasi Kantor ────────────────────────────────────────────────────────────
 
+type OfficeForm = {
+  name: string
+  address: string
+  lat: string
+  lng: string
+  radiusM: number
+  active: boolean
+}
+
+const emptyForm = (): OfficeForm => ({
+  name: '',
+  address: '',
+  lat: '',
+  lng: '',
+  radiusM: 200,
+  active: true,
+})
+
+function officeToForm(o: OfficeLocation): OfficeForm {
+  return {
+    name: o.name,
+    address: o.address,
+    lat: String(o.lat),
+    lng: String(o.lng),
+    radiusM: o.radiusM,
+    active: o.active,
+  }
+}
+
 function KantorTab() {
-  const [offices, setOffices] = useState([
-    { id: 1, name: 'Kantor Pusat', address: 'Jl. Sudirman No. 1, Jakarta Selatan', lat: '-6.2088', lng: '106.8456', radius: 200, active: true },
-    { id: 2, name: 'Kantor Bandung', address: 'Jl. Braga No. 45, Bandung', lat: '-6.9175', lng: '107.6191', radius: 150, active: true },
-    { id: 3, name: 'Kantor Surabaya', address: 'Jl. Raya Gubeng No. 12, Surabaya', lat: '-7.2575', lng: '112.7521', radius: 200, active: false },
-  ])
-  const [showForm, setShowForm] = useState(false)
+  const { offices, setOffices, activeOffices, primary } = useOffices()
+  const [editingId, setEditingId] = useState<number | null>(null)
+  const [isCreating, setIsCreating] = useState(false)
+  const [form, setForm] = useState<OfficeForm>(emptyForm())
+  const [formError, setFormError] = useState<string | null>(null)
+  const [geocodeBusy, setGeocodeBusy] = useState(false)
+  const [toast, setToast] = useState<string | null>(null)
+
+  const showForm = isCreating || editingId != null
+
+  const flash = (msg: string) => {
+    setToast(msg)
+    window.setTimeout(() => setToast(null), 2500)
+  }
+
+  const openCreate = () => {
+    setEditingId(null)
+    setIsCreating(true)
+    setForm(emptyForm())
+    setFormError(null)
+  }
+
+  const openEdit = (office: OfficeLocation) => {
+    setIsCreating(false)
+    setEditingId(office.id)
+    setForm(officeToForm(office))
+    setFormError(null)
+  }
+
+  const closeForm = () => {
+    setIsCreating(false)
+    setEditingId(null)
+    setFormError(null)
+  }
+
+  const saveForm = () => {
+    const lat = Number(form.lat)
+    const lng = Number(form.lng)
+    if (!form.name.trim()) {
+      setFormError('Nama kantor wajib diisi.')
+      return
+    }
+    if (!form.address.trim()) {
+      setFormError('Alamat wajib diisi.')
+      return
+    }
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+      setFormError('Latitude / longitude tidak valid. Pakai "Cari koordinat" atau isi manual.')
+      return
+    }
+
+    const payload: OfficeLocation = {
+      id: editingId ?? Date.now(),
+      name: form.name.trim(),
+      address: form.address.trim(),
+      lat,
+      lng,
+      radiusM: form.radiusM,
+      active: form.active,
+    }
+
+    if (isCreating) {
+      setOffices((prev) => [...prev, payload])
+      flash(`Lokasi "${payload.name}" ditambahkan.`)
+    } else {
+      setOffices((prev) => prev.map((o) => (o.id === editingId ? payload : o)))
+      flash(`Lokasi "${payload.name}" diperbarui.`)
+    }
+    closeForm()
+  }
+
+  const removeOffice = (id: number) => {
+    if (offices.length <= 1) {
+      setFormError('Minimal satu lokasi kantor harus ada.')
+      flash('Minimal satu lokasi kantor harus ada.')
+      return
+    }
+    const name = offices.find((o) => o.id === id)?.name ?? 'Kantor'
+    setOffices((prev) => prev.filter((o) => o.id !== id))
+    if (editingId === id) closeForm()
+    flash(`"${name}" dihapus.`)
+  }
+
+  const toggleActive = (id: number) => {
+    setOffices((prev) =>
+      prev.map((o) => (o.id === id ? { ...o, active: !o.active } : o)),
+    )
+  }
+
+  const geocodeAddress = async () => {
+    if (!form.address.trim()) {
+      setFormError('Isi alamat dulu, lalu cari koordinat.')
+      return
+    }
+    setGeocodeBusy(true)
+    setFormError(null)
+    try {
+      const q = encodeURIComponent(form.address.trim())
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=1`,
+        { headers: { Accept: 'application/json' } },
+      )
+      const data = (await res.json()) as Array<{ lat: string; lon: string }>
+      if (!data?.[0]) {
+        setFormError('Alamat tidak ditemukan. Isi lat/lng manual.')
+        return
+      }
+      setForm((f) => ({
+        ...f,
+        lat: Number(data[0].lat).toFixed(5),
+        lng: Number(data[0].lon).toFixed(5),
+      }))
+    } catch {
+      setFormError('Gagal mencari koordinat. Coba lagi atau isi manual.')
+    } finally {
+      setGeocodeBusy(false)
+    }
+  }
+
+  const previewLat = Number(form.lat)
+  const previewLng = Number(form.lng)
+  const hasPreview = Number.isFinite(previewLat) && Number.isFinite(previewLng)
+
+  const overviewSites = activeOffices.map((o) => ({
+    id: o.id,
+    lat: o.lat,
+    lng: o.lng,
+    name: o.name,
+    radiusM: o.radiusM,
+  }))
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div style={{ fontFamily: 'Outfit', fontWeight: 700, fontSize: 15, color: 'var(--foreground)' }}>Lokasi Kantor & Geofence</div>
-        <button className="btn-primary" onClick={() => setShowForm(s => !s)}>+ Tambah Lokasi</button>
+      {toast && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 20,
+            right: 20,
+            zIndex: 80,
+            background: 'var(--foreground)',
+            color: '#fff',
+            padding: '12px 16px',
+            borderRadius: 12,
+            fontFamily: 'Outfit',
+            fontSize: 13,
+            fontWeight: 600,
+            boxShadow: '0 8px 24px rgba(0,0,0,0.18)',
+            maxWidth: 320,
+          }}
+        >
+          {toast}
+        </div>
+      )}
+
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+        <div>
+          <div style={{ fontFamily: 'Outfit', fontWeight: 700, fontSize: 15, color: 'var(--foreground)' }}>
+            Lokasi Kantor & Geofence
+          </div>
+          <div style={{ fontSize: 12, color: 'var(--muted-foreground)', marginTop: 2 }}>
+            Bisa banyak kantor. Semua yang <strong style={{ color: 'var(--foreground)' }}>Aktif</strong> dipakai absensi karyawan
+            ({activeOffices.length} aktif dari {offices.length} lokasi).
+          </div>
+        </div>
+        <button type="button" className="btn-primary" onClick={openCreate}>+ Tambah Lokasi</button>
       </div>
+
+      {activeOffices.length > 0 && !showForm && (
+        <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+          <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)', fontFamily: 'Outfit', fontWeight: 600, fontSize: 13 }}>
+            Peta semua kantor aktif
+          </div>
+          <GeoMap
+            height={240}
+            showOffice
+            showGeofence
+            sites={overviewSites}
+            officeLat={primary.lat}
+            officeLng={primary.lng}
+            officeName={primary.name}
+            radiusM={primary.radiusM}
+            focusLat={primary.lat}
+            focusLng={primary.lng}
+            zoom={activeOffices.length > 1 ? 11 : 16}
+          />
+        </div>
+      )}
 
       {showForm && (
         <div className="card slide-down" style={{ padding: '20px 22px', border: '1.5px solid var(--primary)' }}>
-          <div style={{ fontFamily: 'Outfit', fontWeight: 700, fontSize: 14, color: 'var(--primary)', marginBottom: 16 }}>Tambah Lokasi Baru</div>
+          <div style={{ fontFamily: 'Outfit', fontWeight: 700, fontSize: 14, color: 'var(--primary)', marginBottom: 16 }}>
+            {isCreating ? 'Tambah Lokasi Kantor Baru' : 'Edit Lokasi Kantor'}
+          </div>
           <div className="grid-2" style={{ '--gap': '14px' } as CSSProperties}>
-            {[
-              { label: 'Nama Kantor', placeholder: 'cth: Kantor Jakarta' },
-              { label: 'Alamat', placeholder: 'Jl. ...' },
-              { label: 'Latitude', placeholder: '-6.2088' },
-              { label: 'Longitude', placeholder: '106.8456' },
-            ].map(f => (
-              <div key={f.label}>
-                <label style={{ fontFamily: 'Outfit', fontWeight: 600, fontSize: 12, color: 'var(--muted-foreground)', display: 'block', marginBottom: 5 }}>{f.label}</label>
-                <input placeholder={f.placeholder} style={{ width: '100%', padding: '9px 12px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--muted)', color: 'var(--foreground)', fontFamily: 'Inter', fontSize: 13, outline: 'none', boxSizing: 'border-box' }} />
-              </div>
-            ))}
+            <div>
+              <label style={{ fontFamily: 'Outfit', fontWeight: 600, fontSize: 12, color: 'var(--muted-foreground)', display: 'block', marginBottom: 5 }}>Nama Kantor</label>
+              <input
+                value={form.name}
+                onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+                placeholder="cth: Kantor Cabang Kemanggisan"
+                style={{ width: '100%', padding: '9px 12px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--muted)', color: 'var(--foreground)', fontFamily: 'Inter', fontSize: 13, outline: 'none', boxSizing: 'border-box' }}
+              />
+            </div>
+            <div>
+              <label style={{ fontFamily: 'Outfit', fontWeight: 600, fontSize: 12, color: 'var(--muted-foreground)', display: 'block', marginBottom: 5 }}>Status</label>
+              <button
+                type="button"
+                className="btn-ghost"
+                onClick={() => setForm((f) => ({ ...f, active: !f.active }))}
+                style={{ width: '100%', justifyContent: 'center' }}
+              >
+                {form.active ? 'Aktif (bisa dipakai absensi)' : 'Nonaktif'}
+              </button>
+            </div>
+            <div style={{ gridColumn: '1 / -1' }}>
+              <label style={{ fontFamily: 'Outfit', fontWeight: 600, fontSize: 12, color: 'var(--muted-foreground)', display: 'block', marginBottom: 5 }}>Alamat Lengkap</label>
+              <textarea
+                value={form.address}
+                onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))}
+                rows={2}
+                placeholder="Jl. ..., RT/RW, Kelurahan, Kecamatan, Kota, Kode Pos"
+                style={{ width: '100%', padding: '9px 12px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--muted)', color: 'var(--foreground)', fontFamily: 'Inter', fontSize: 13, outline: 'none', boxSizing: 'border-box', resize: 'vertical' }}
+              />
+              <button
+                type="button"
+                className="btn-ghost"
+                disabled={geocodeBusy}
+                onClick={geocodeAddress}
+                style={{ marginTop: 8, fontSize: 12, opacity: geocodeBusy ? 0.6 : 1 }}
+              >
+                {geocodeBusy ? 'Mencari…' : 'Cari koordinat dari alamat'}
+              </button>
+            </div>
+            <div>
+              <label style={{ fontFamily: 'Outfit', fontWeight: 600, fontSize: 12, color: 'var(--muted-foreground)', display: 'block', marginBottom: 5 }}>Latitude</label>
+              <input
+                value={form.lat}
+                onChange={(e) => setForm((f) => ({ ...f, lat: e.target.value }))}
+                placeholder="-6.18153"
+                style={{ width: '100%', padding: '9px 12px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--muted)', color: 'var(--foreground)', fontFamily: 'JetBrains Mono', fontSize: 13, outline: 'none', boxSizing: 'border-box' }}
+              />
+            </div>
+            <div>
+              <label style={{ fontFamily: 'Outfit', fontWeight: 600, fontSize: 12, color: 'var(--muted-foreground)', display: 'block', marginBottom: 5 }}>Longitude</label>
+              <input
+                value={form.lng}
+                onChange={(e) => setForm((f) => ({ ...f, lng: e.target.value }))}
+                placeholder="106.80283"
+                style={{ width: '100%', padding: '9px 12px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--muted)', color: 'var(--foreground)', fontFamily: 'JetBrains Mono', fontSize: 13, outline: 'none', boxSizing: 'border-box' }}
+              />
+            </div>
           </div>
           <div style={{ marginTop: 14 }}>
             <label style={{ fontFamily: 'Outfit', fontWeight: 600, fontSize: 12, color: 'var(--muted-foreground)', display: 'block', marginBottom: 5 }}>Radius Geofence (meter)</label>
-            <input type="range" min={50} max={500} defaultValue={200} style={{ width: '100%' }} />
-            <div className="mono" style={{ fontSize: 12, color: 'var(--primary)', marginTop: 4 }}>200 meter</div>
+            <input
+              type="range"
+              min={50}
+              max={500}
+              value={form.radiusM}
+              onChange={(e) => setForm((f) => ({ ...f, radiusM: Number(e.target.value) }))}
+              style={{ width: '100%' }}
+            />
+            <div className="mono" style={{ fontSize: 12, color: 'var(--primary)', marginTop: 4 }}>{form.radiusM} meter</div>
           </div>
+
+          {hasPreview && (
+            <div style={{ marginTop: 16, borderRadius: 12, overflow: 'hidden', border: '1px solid var(--border)' }}>
+              <GeoMap
+                height={200}
+                showOffice
+                showGeofence
+                officeLat={previewLat}
+                officeLng={previewLng}
+                officeName={form.name || 'Kantor'}
+                radiusM={form.radiusM}
+                focusLat={previewLat}
+                focusLng={previewLng}
+                zoom={16}
+              />
+            </div>
+          )}
+
+          {formError && (
+            <div style={{ marginTop: 12, fontSize: 12, color: '#dc2626' }}>{formError}</div>
+          )}
+
           <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
-            <button className="btn-primary" onClick={() => setShowForm(false)}>Simpan Lokasi</button>
-            <button className="btn-ghost" onClick={() => setShowForm(false)}>Batal</button>
+            <button type="button" className="btn-primary" onClick={saveForm}>Simpan Lokasi</button>
+            <button type="button" className="btn-ghost" onClick={closeForm}>Batal</button>
           </div>
         </div>
       )}
@@ -53,20 +339,26 @@ function KantorTab() {
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, flexWrap: 'wrap' }}>
               <div style={{ width: 40, height: 40, borderRadius: 10, background: office.active ? 'rgba(37,99,235,0.1)' : 'var(--muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>📍</div>
               <div style={{ flex: 1, minWidth: 200 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4, flexWrap: 'wrap' }}>
                   <div style={{ fontFamily: 'Outfit', fontWeight: 700, fontSize: 15, color: 'var(--foreground)' }}>{office.name}</div>
                   <span style={{ fontSize: 10, fontFamily: 'JetBrains Mono', padding: '2px 8px', borderRadius: 99, background: office.active ? 'rgba(16,185,129,0.12)' : 'var(--muted)', color: office.active ? '#059669' : 'var(--muted-foreground)', border: `1px solid ${office.active ? 'rgba(16,185,129,0.25)' : 'var(--border)'}` }}>{office.active ? 'Aktif' : 'Nonaktif'}</span>
+                  {office.active && (
+                    <span style={{ fontSize: 10, fontFamily: 'JetBrains Mono', padding: '2px 8px', borderRadius: 99, background: 'rgba(37,99,235,0.1)', color: 'var(--primary)', border: '1px solid rgba(37,99,235,0.25)' }}>Bisa absensi</span>
+                  )}
                 </div>
                 <div style={{ fontSize: 13, color: 'var(--muted-foreground)', marginBottom: 10 }}>{office.address}</div>
-                <div style={{ display: 'flex', gap: 20, fontSize: 12, fontFamily: 'JetBrains Mono' }}>
+                <div style={{ display: 'flex', gap: 20, fontSize: 12, fontFamily: 'JetBrains Mono', flexWrap: 'wrap' }}>
                   <span style={{ color: 'var(--muted-foreground)' }}>Lat: <span style={{ color: 'var(--foreground)' }}>{office.lat}</span></span>
                   <span style={{ color: 'var(--muted-foreground)' }}>Lng: <span style={{ color: 'var(--foreground)' }}>{office.lng}</span></span>
-                  <span style={{ color: 'var(--muted-foreground)' }}>Radius: <span style={{ color: 'var(--primary)' }}>{office.radius}m</span></span>
+                  <span style={{ color: 'var(--muted-foreground)' }}>Radius: <span style={{ color: 'var(--primary)' }}>{office.radiusM}m</span></span>
                 </div>
               </div>
-              <div style={{ display: 'flex', gap: 6 }}>
-                <button className="btn-ghost" style={{ padding: '6px 12px', fontSize: 12 }}>Edit</button>
-                <button className="btn-ghost" style={{ padding: '6px 12px', fontSize: 12, color: '#dc2626', borderColor: 'rgba(239,68,68,0.25)' }}>Hapus</button>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                <button type="button" className="btn-ghost" style={{ padding: '6px 12px', fontSize: 12 }} onClick={() => openEdit(office)}>Edit</button>
+                <button type="button" className="btn-ghost" style={{ padding: '6px 12px', fontSize: 12 }} onClick={() => toggleActive(office.id)}>
+                  {office.active ? 'Nonaktifkan' : 'Aktifkan'}
+                </button>
+                <button type="button" className="btn-ghost" style={{ padding: '6px 12px', fontSize: 12, color: '#dc2626', borderColor: 'rgba(239,68,68,0.25)' }} onClick={() => removeOffice(office.id)}>Hapus</button>
               </div>
             </div>
           </div>
@@ -130,8 +422,6 @@ function JamKerjaTab() {
     </div>
   )
 }
-
-// ─── Hari Libur ───────────────────────────────────────────────────────────────
 
 const holidays = [
   { date: '17 Agu 2026', name: 'Hari Kemerdekaan RI', type: 'Nasional' },

@@ -6,6 +6,7 @@ import dynamic from 'next/dynamic'
 import BrandMark from '@/components/BrandMark'
 import CameraCapture, { type CameraCaptureHandle, type CameraLocationInfo } from '@/components/CameraCapture'
 import ModalOverlay from '@/components/ModalOverlay'
+import EmployeePayrollView from '@/components/employee/EmployeePayrollView'
 import { useGeolocation } from '@/hooks/useGeolocation'
 import { useOffices } from '@/hooks/useOffices'
 import { useAttendance } from '@/hooks/useAttendance'
@@ -37,6 +38,7 @@ type EmployeeNav =
   | 'permohonan/dinas'
   | 'profil'
   | 'pengumuman'
+  | 'payroll'
 
 type NavItem = {
   id: string
@@ -63,6 +65,7 @@ const NAV: NavItem[] = [
     sub: PERMOHONAN_SUBMENU.map((s) => ({ id: s.id as EmployeeNav, label: s.label })),
   },
   { id: 'pengumuman', label: 'Pengumuman', icon: '📢' },
+  { id: 'payroll', label: 'Slip Gaji', icon: '💰' },
   { id: 'profil', label: 'Profil Saya', icon: '⊙' },
 ]
 
@@ -1462,6 +1465,7 @@ export default function EmployeePortal({ user, onLogout, dark, onToggleDark }: {
     'absensi/riwayat': 'Absensi — Riwayat',
     ...PERMOHONAN_PAGE_LABELS,
     pengumuman: 'Pengumuman',
+    payroll: 'Informasi Slip Gaji & Pajak',
     profil: 'Profil Saya',
   } as Record<EmployeeNav, string>
 
@@ -1586,6 +1590,7 @@ export default function EmployeePortal({ user, onLogout, dark, onToggleDark }: {
           {nav === 'absensi/riwayat' && <RiwayatEmpPage />}
           {nav.startsWith('permohonan/') && <PermohonanEmpPage user={user} categoryKey={nav} />}
           {nav === 'pengumuman' && <PengumumanEmpPage />}
+          {nav === 'payroll' && <EmployeePayrollView user={user} />}
           {nav === 'profil' && <ProfilPage user={user} />}
         </main>
       </div>
